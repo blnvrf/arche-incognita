@@ -82,17 +82,20 @@ const sampleNodes = [
 ];
 
 const sampleEdges = [
-  { id: 'e1-3', source: '1', target: '3', type: 'smoothstep' },
-  { id: 'e2-3', source: '2', target: '3', type: 'smoothstep' },
-  { id: 'e3-5', source: '3', target: '5', type: 'smoothstep' },
-  { id: 'e4-5', source: '4', target: '5', type: 'smoothstep' },
+  { id: 'e1-3', source: '1', target: '3', type: 'smart' },
+  { id: 'e2-3', source: '2', target: '3', type: 'smart' },
+  { id: 'e3-5', source: '3', target: '5', type: 'smart' },
+  { id: 'e4-5', source: '4', target: '5', type: 'smart' },
 ];
 
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    // Migrate old edge types to 'smart'
+    if (data?.edges) data.edges = data.edges.map((e) => ({ ...e, type: 'smart' }));
+    return data;
   } catch {
     return null;
   }
@@ -127,7 +130,7 @@ export const useStore = create((set, get) => ({
     saveToStorage(get().nodes, edges, get().balance);
   },
   onConnect: (connection) => {
-    const edges = addEdge({ ...connection, type: 'smoothstep' }, get().edges);
+    const edges = addEdge({ ...connection, type: 'smart' }, get().edges);
     set({ edges });
     saveToStorage(get().nodes, edges, get().balance);
   },

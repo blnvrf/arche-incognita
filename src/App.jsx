@@ -8,12 +8,14 @@ import {
 
 import { useStore } from './store';
 import TaskNode from './components/TaskNode';
+import SmartEdge from './components/SmartEdge';
 import NodeSidebar from './components/NodeSidebar';
 import FocusBar from './components/FocusBar';
 import BalanceCounter from './components/BalanceCounter';
 import './App.css';
 
 const nodeTypes = { taskNode: TaskNode };
+const edgeTypes = { smart: SmartEdge };
 
 export default function App() {
   const {
@@ -77,6 +79,7 @@ export default function App() {
           onConnect={onConnect}
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.3}
