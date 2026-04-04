@@ -1,0 +1,110 @@
+.focus-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 1px solid var(--status-active-border);
+  border-radius: 6px;
+  box-shadow:
+    0 0 20px var(--status-active-glow),
+    0 8px 32px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  z-index: 90;
+  min-width: 360px;
+  max-width: 560px;
+}
+
+.focus-bar__indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-active-text);
+  flex-shrink: 0;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.focus-bar__emoji {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.focus-bar__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.focus-bar__label {
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--status-active-text);
+}
+
+.focus-bar__title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.focus-bar__time {
+  font-family: var(--font-display);
+  font-size: 9px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  padding: 2px 6px;
+}
+
+.focus-bar__abandon {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.focus-bar__abandon:hover {
+  color: #e07070;
+  background: rgba(224, 112, 112, 0.1);
+}
+
+.focus-bar__complete {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: var(--status-available);
+  border: 1px solid var(--status-available-border);
+  border-radius: 3px;
+  color: var(--status-available-text);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+.focus-bar__complete:hover {
+  opacity: 0.85;
+  box-shadow: 0 0 10px var(--status-available-glow);
+}

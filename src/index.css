@@ -1,0 +1,105 @@
+@import '@fontsource/cinzel/400.css';
+@import '@fontsource/cinzel/600.css';
+@import '@fontsource/crimson-text/400.css';
+@import '@fontsource/crimson-text/600.css';
+@import '@xyflow/react/dist/style.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-void: #090b0f;
+  --bg-deep: #0d1117;
+  --bg-panel: #111820;
+  --bg-card: #141c26;
+  --bg-card-hover: #1a2535;
+
+  --border-default: rgba(255,255,255,0.07);
+  --border-subtle: rgba(255,255,255,0.04);
+
+  --status-locked: #2a2a2a;
+  --status-locked-border: #3a3a3a;
+  --status-locked-text: #555;
+
+  --status-available: #1a3a1a;
+  --status-available-border: #2d6b2d;
+  --status-available-glow: rgba(45, 107, 45, 0.3);
+  --status-available-text: #7dbb7d;
+
+  --status-active: #1a2a3a;
+  --status-active-border: #2d6baa;
+  --status-active-glow: rgba(45, 107, 170, 0.4);
+  --status-active-text: #7db8dd;
+
+  --status-completed: #2a2a1a;
+  --status-completed-border: #6b6b2d;
+  --status-completed-glow: rgba(180, 160, 45, 0.2);
+  --status-completed-text: #c4a84a;
+
+  --accent-gold: #c4a84a;
+  --accent-gold-bright: #e8c96a;
+  --accent-blue: #4a8bc4;
+  --accent-green: #4ab44a;
+
+  --text-primary: #d4c9b0;
+  --text-secondary: #7a8595;
+  --text-muted: #3d4855;
+
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Text', serif;
+
+  --edge-color: rgba(100, 130, 160, 0.35);
+  --edge-color-active: rgba(74, 139, 196, 0.7);
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+
+/* React Flow overrides */
+.react-flow__background { background: var(--bg-void); }
+.react-flow__edge-path { stroke: var(--edge-color); stroke-width: 1.5; }
+.react-flow__edge.animated .react-flow__edge-path { stroke: var(--edge-color-active); }
+.react-flow__controls { display: none; }
+.react-flow__attribution { display: none; }
+
+/* Animated shimmer border for active node */
+@keyframes shimmer-border {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px var(--status-active-glow), 0 0 20px var(--status-active-glow); }
+  50%       { box-shadow: 0 0 16px var(--status-active-glow), 0 0 40px var(--status-active-glow); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

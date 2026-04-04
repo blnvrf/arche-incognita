@@ -1,0 +1,201 @@
+.task-node {
+  position: relative;
+  width: 240px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  font-family: var(--font-body);
+}
+
+.task-node:hover {
+  transform: translateY(-1px);
+}
+
+/* ── Status: locked ── */
+.task-node--locked {
+  background: #111518;
+  border: 1px solid var(--status-locked-border);
+  opacity: 0.55;
+  cursor: default;
+}
+.task-node--locked .task-node__title { color: var(--status-locked-text); }
+
+/* ── Status: available ── */
+.task-node--available {
+  background: var(--status-available);
+  border: 1px solid var(--status-available-border);
+  box-shadow: 0 0 10px var(--status-available-glow);
+}
+.task-node--available:hover {
+  box-shadow: 0 0 18px var(--status-available-glow);
+}
+.task-node--available .task-node__title { color: #c8e6c8; }
+
+/* ── Status: active (shimmer) ── */
+.task-node--active {
+  background: var(--status-active);
+  border: 1px solid transparent;
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+.task-node--active .task-node__title { color: #bde0f7; }
+
+.task-node__shimmer {
+  position: absolute;
+  inset: -1px;
+  border-radius: 5px;
+  padding: 1px;
+  background: linear-gradient(
+    270deg,
+    #4a8bc4,
+    #7db8dd,
+    #2d6baa,
+    #a8d4f0,
+    #4a8bc4
+  );
+  background-size: 300% 300%;
+  animation: shimmer-border 3s ease infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Status: completed ── */
+.task-node--completed {
+  background: #0e0e08;
+  border: 1px solid var(--status-completed-border);
+  opacity: 0.7;
+}
+.task-node--completed .task-node__title {
+  color: var(--status-completed-text);
+  text-decoration: line-through;
+  text-decoration-color: rgba(196, 168, 74, 0.4);
+}
+
+/* ── Selected ── */
+.task-node--selected {
+  outline: 1px solid rgba(255,255,255,0.2);
+  outline-offset: 3px;
+}
+
+/* ── Inner layout ── */
+.task-node__inner {
+  padding: 10px 12px 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.task-node__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.task-node__emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.task-node__meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.task-node__time,
+.task-node__cost,
+.task-node__earn {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  padding: 2px 5px;
+  border-radius: 2px;
+}
+
+.task-node__time {
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-subtle);
+}
+
+.task-node__cost {
+  color: #e07070;
+  background: rgba(224, 112, 112, 0.08);
+  border: 1px solid rgba(224, 112, 112, 0.2);
+}
+
+.task-node__earn {
+  color: #70c970;
+  background: rgba(112, 201, 112, 0.08);
+  border: 1px solid rgba(112, 201, 112, 0.2);
+}
+
+.task-node__title {
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.task-node__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.task-node__benefit {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.task-node__benefit::before {
+  content: '→ ';
+  color: var(--text-muted);
+}
+
+.task-node__status-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.task-node__status-icon {
+  font-size: 10px;
+}
+
+.task-node__status-label {
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.task-node--active .task-node__status-label { color: var(--status-active-text); }
+.task-node--available .task-node__status-label { color: var(--status-available-text); }
+.task-node--completed .task-node__status-label { color: var(--status-completed-text); }
+
+/* ── React Flow Handles ── */
+.task-handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: rgba(255,255,255,0.15) !important;
+  border: 1px solid rgba(255,255,255,0.25) !important;
+  border-radius: 50% !important;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.task-handle:hover {
+  background: rgba(255,255,255,0.4) !important;
+  transform: scale(1.4);
+}
