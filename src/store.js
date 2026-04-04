@@ -242,8 +242,8 @@ export const useStore = create((set, get) => ({
       tierGroups[t].push(n.id);
     });
 
-    const X_GAP = 320;
-    const Y_GAP = 120;
+    const X_GAP = 400;
+    const Y_GAP = 180;
     const updated = nodes.map((n) => {
       const t = tier[n.id] || 0;
       const group = tierGroups[t];
