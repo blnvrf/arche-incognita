@@ -193,10 +193,53 @@
   50%       { color: #fff4a8; text-shadow: 0 0 14px rgba(255,244,160,0.8), 0 0 4px rgba(255,215,0,1); }
 }
 
-.add-btn {
+/* ── FAB cluster ── */
+.fab-cluster {
   position: fixed;
   bottom: 28px;
   right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 80;
+}
+
+.fab-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background-image:
+    linear-gradient(#0e0f12, #121418),
+    conic-gradient(from var(--border-angle),
+      #2e2e2e 0%,
+      #2e2e2e 28%,
+      #686868 48%,
+      #a0a0a0 62%,
+      #c8c8c8 68%,
+      #a0a0a0 74%,
+      #686868 86%,
+      #2e2e2e 100%
+    );
+  background-origin: padding-box, border-box;
+  background-clip:   padding-box, border-box;
+  color: #909090;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(100,100,100,0.10), 0 4px 14px rgba(0,0,0,0.4);
+  animation: border-orbit 13s linear infinite;
+  transition: color 0.15s, transform 0.12s;
+}
+.fab-btn:hover {
+  color: #c8c8c8;
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(150,150,150,0.18), 0 4px 18px rgba(0,0,0,0.5);
+}
+.fab-btn:active { transform: scale(0.97); }
+
+.add-btn {
   width: 52px;
   height: 52px;
   border-radius: 50%;

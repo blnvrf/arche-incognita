@@ -15,6 +15,7 @@ import SmartEdge from './components/SmartEdge';
 import NodeSidebar from './components/NodeSidebar';
 import FocusBar from './components/FocusBar';
 import BalanceCounter from './components/BalanceCounter';
+import { Save, FolderOpen } from 'lucide-react';
 import worldMap from './assets/old world map.png';
 import './App.css';
 
@@ -176,12 +177,39 @@ export default function App() {
     nodes,
     onNodesChange,
     openAddSidebar, autoLayout,
-    sidebarOpen,
+    sidebarOpen, loadGraph,
   } = useStore();
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => { autoLayout(); }, []);
 
   const onPaneClick = useCallback(() => {}, []);
+
+  const handleExport = () => {
+    const { nodes, edges, balance } = useStore.getState();
+    const blob = new Blob(
+      [JSON.stringify({ nodes, edges, balance }, null, 2)],
+      { type: 'application/json' }
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `arche-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try { loadGraph(JSON.parse(ev.target.result)); } catch {}
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   return (
     <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.78),rgba(9,11,15,0.78)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
@@ -238,10 +266,19 @@ export default function App() {
         </ReactFlow>
       </div>
 
-      {/* Add button */}
-      <button className="add-btn" onClick={openAddSidebar} title="Add new task">
-        +
-      </button>
+      {/* FAB cluster — Export / Import / Add */}
+      <div className="fab-cluster">
+        <button className="fab-btn" onClick={handleExport} title="Export graph"><Save size={18} strokeWidth={1.8} /></button>
+        <button className="fab-btn" onClick={() => fileInputRef.current?.click()} title="Import graph"><FolderOpen size={18} strokeWidth={1.8} /></button>
+        <button className="add-btn" onClick={openAddSidebar} title="Add new task">+</button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          style={{ display: 'none' }}
+          onChange={handleImportFile}
+        />
+      </div>
 
       {/* Sidebar */}
       <NodeSidebar />

@@ -12,7 +12,7 @@ const sampleNodes = [
     data: {
       title: 'Complete Logo for Nexus Studio',
       status: 'completed',
-      emoji: '🎨',
+      icon: 'Palette',
       timeEst: '6h',
       cost: 0,
       moneyDelta: 400,
@@ -27,7 +27,7 @@ const sampleNodes = [
     data: {
       title: 'Buy Microphone',
       status: 'available',
-      emoji: '🎙️',
+      icon: 'Mic',
       timeEst: '1h',
       cost: 150,
       moneyDelta: -150,
@@ -42,7 +42,7 @@ const sampleNodes = [
     data: {
       title: 'Post 1st YouTube Video',
       status: 'locked',
-      emoji: '📹',
+      icon: 'Video',
       timeEst: '8h',
       cost: 0,
       moneyDelta: 0,
@@ -57,7 +57,7 @@ const sampleNodes = [
     data: {
       title: 'Build Client Brand Book',
       status: 'available',
-      emoji: '📐',
+      icon: 'Pencil',
       timeEst: '12h',
       cost: 0,
       moneyDelta: 800,
@@ -72,7 +72,7 @@ const sampleNodes = [
     data: {
       title: 'Reach 100 YouTube Subscribers',
       status: 'locked',
-      emoji: '🏆',
+      icon: 'Trophy',
       timeEst: '3mo',
       cost: 0,
       moneyDelta: 0,
@@ -255,6 +255,14 @@ export const useStore = create((set, get) => ({
     );
     set({ nodes, edges, activeNodeId: get().activeNodeId === id ? null : get().activeNodeId });
     saveToStorage(nodes, edges, get().balance);
+  },
+
+  loadGraph: (data) => {
+    const edges = (data.edges ?? []).map((e) => ({ ...e, type: 'smart' }));
+    const nodes = recomputeStatuses(data.nodes ?? [], edges);
+    const balance = data.balance ?? 0;
+    set({ nodes, edges, balance, activeNodeId: null, sidebarOpen: false, editingNode: null });
+    saveToStorage(nodes, edges, balance);
   },
 
   autoLayout: async () => {

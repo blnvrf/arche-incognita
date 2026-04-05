@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Trash2, Check } from 'lucide-react';
 import { useStore } from '../store';
+import { ICON_LIST, ICON_MAP } from '../icons';
 import './NodeSidebar.css';
-
-const EMOJIS = ['🎨', '📹', '🎙️', '📐', '💻', '📦', '🏆', '💰', '📝', '🔧', '🚀', '🎯', '🏋️', '📊', '🤝', '🌐', '✍️', '📸', '🎬', '🔑'];
 
 const DEFAULT_FORM = {
   title: '',
-  emoji: '🎯',
+  icon: 'Target',
   timeEst: '',
   cost: '',
   moneyDelta: '',
@@ -27,7 +26,7 @@ export default function NodeSidebar() {
     if (sidebarMode === 'edit' && editingNode) {
       setForm({
         title: editingNode.data.title || '',
-        emoji: editingNode.data.emoji || '🎯',
+        icon: editingNode.data.icon || 'Target',
         timeEst: editingNode.data.timeEst || '',
         cost: editingNode.data.cost != null ? String(editingNode.data.cost) : '',
         moneyDelta: editingNode.data.moneyDelta != null ? String(editingNode.data.moneyDelta) : '',
@@ -48,7 +47,7 @@ export default function NodeSidebar() {
     if (!form.title.trim()) return;
     const nodeData = {
       title: form.title.trim(),
-      emoji: form.emoji,
+      icon: form.icon,
       timeEst: form.timeEst.trim(),
       cost: parseFloat(form.cost) || 0,
       moneyDelta: parseFloat(form.moneyDelta) || 0,
@@ -111,19 +110,23 @@ export default function NodeSidebar() {
       </div>
 
       <div className="sidebar__body">
-        {/* Emoji picker */}
+        {/* Icon picker */}
         <div className="field">
           <label className="field__label">Icon</label>
-          <div className="emoji-grid">
-            {EMOJIS.map((e) => (
-              <button
-                key={e}
-                className={`emoji-btn ${form.emoji === e ? 'emoji-btn--active' : ''}`}
-                onClick={() => setForm({ ...form, emoji: e })}
-              >
-                {e}
-              </button>
-            ))}
+          <div className="icon-grid">
+            {ICON_LIST.map((name) => {
+              const IC = ICON_MAP[name];
+              return (
+                <button
+                  key={name}
+                  className={`icon-btn ${form.icon === name ? 'icon-btn--active' : ''}`}
+                  onClick={() => setForm({ ...form, icon: name })}
+                  title={name}
+                >
+                  <IC size={16} strokeWidth={1.8} />
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -298,7 +301,7 @@ export default function NodeSidebar() {
                 const edge = requiresEdges.find((e) => e.source === n.id);
                 return (
                   <div key={n.id} className={`rel-item rel-item--${n.data.status}`}>
-                    <span className="rel-item__emoji">{n.data.emoji}</span>
+                    {(() => { const IC = ICON_MAP[n.data.icon] ?? ICON_MAP['Target']; return <IC size={12} strokeWidth={1.8} style={{ flexShrink: 0, color: 'var(--text-secondary)' }} />; })()}
                     <span className="rel-item__title">{n.data.title}</span>
                     <span className="rel-item__status">{n.data.status}</span>
                     <button className="rel-item__remove" onClick={() => removeEdge(edge.id)} title="Remove">
@@ -337,7 +340,7 @@ export default function NodeSidebar() {
                 const edge = unlocksEdges.find((e) => e.target === n.id);
                 return (
                   <div key={n.id} className={`rel-item rel-item--${n.data.status}`}>
-                    <span className="rel-item__emoji">{n.data.emoji}</span>
+                    {(() => { const IC = ICON_MAP[n.data.icon] ?? ICON_MAP['Target']; return <IC size={12} strokeWidth={1.8} style={{ flexShrink: 0, color: 'var(--text-secondary)' }} />; })()}
                     <span className="rel-item__title">{n.data.title}</span>
                     <span className="rel-item__status">{n.data.status}</span>
                     <button className="rel-item__remove" onClick={() => removeEdge(edge.id)} title="Remove">

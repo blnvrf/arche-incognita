@@ -131,31 +131,36 @@
   color: var(--text-muted);
 }
 
-/* ── Emoji grid ── */
-.emoji-grid {
+/* ── Icon grid ── */
+.icon-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.emoji-btn {
+.icon-btn {
   width: 32px;
   height: 32px;
   border: 1px solid var(--border-subtle);
   border-radius: 3px;
   background: var(--bg-card);
-  font-size: 16px;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
-.emoji-btn:hover { background: var(--bg-card-hover); }
-.emoji-btn--active {
+.icon-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.icon-btn--active {
   border-color: var(--accent-gold);
   background: rgba(196, 168, 74, 0.1);
+  color: var(--accent-gold);
 }
 
 /* ── Relationship lists (Requires / Unlocks) ── */

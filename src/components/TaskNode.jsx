@@ -1,5 +1,6 @@
 import { Handle, Position } from '@xyflow/react';
 import { useStore } from '../store';
+import { ICON_MAP } from '../icons';
 import './TaskNode.css';
 
 export default function TaskNode({ id, data, selected }) {
@@ -29,7 +30,10 @@ export default function TaskNode({ id, data, selected }) {
       <Handle type="target" position={Position.Left} className="task-handle" />
 
       <div className="task-node__inner">
-        <div className="task-node__title">{data.title}</div>
+        <div className="task-node__title">
+          {(() => { const IC = ICON_MAP[data.icon] ?? ICON_MAP['Target']; return <IC size={13} strokeWidth={2.2} style={{ flexShrink: 0 }} />; })()}
+          {data.title}
+        </div>
 
         <div className="task-node__meta">
           {data.timeEst    && <span className="task-node__time">{data.timeEst}</span>}
