@@ -239,30 +239,49 @@ export const useStore = create((set, get) => ({
     const { nodes, edges } = get();
     const elk = new ELK();
 
+    const NODE_W  = 240;
+    const NODE_H  = 160;
+    const GRID_W  = 400;  // column pitch  (node width  + horizontal gap)
+    const GRID_H  = 220;  // row pitch      (node height + vertical gap)
+
     const graph = {
       id: 'root',
       layoutOptions: {
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        'elk.layered.spacing.nodeNodeBetweenLayers': '320',
-        'elk.spacing.nodeNode': '100',
+        // Match ELK spacing to grid so its ordering matches our final positions
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(GRID_W - NODE_W),
+        'elk.spacing.nodeNode': String(GRID_H - NODE_H),
       },
-      children: nodes.map((n) => ({
-        id: n.id,
-        width:  n.measured?.width  ?? 240,
-        height: n.measured?.height ?? 140,
-      })),
-      edges: edges.map((e) => ({
-        id: e.id,
-        sources: [e.source],
-        targets: [e.target],
-      })),
+      children: nodes.map((n) => ({ id: n.id, width: NODE_W, height: NODE_H })),
+      edges: edges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
     };
 
     const laid = await elk.layout(graph);
 
+    // ── Snap to grid ─────────────────────────────────────────────────────────
+    // Group nodes into layers by proximity of their ELK x position.
+    // Within each layer keep ELK's vertical ordering, then assign
+    // clean grid coordinates so every row shares an exact Y value.
+    const sorted = [...laid.children].sort((a, b) => a.x - b.x);
+    const layers = [];
+    for (const node of sorted) {
+      const last = layers[layers.length - 1];
+      // New layer when x jumps by more than half a node width
+      if (!last || node.x - last[0].x > NODE_W / 2) {
+        layers.push([node]);
+      } else {
+        last.push(node);
+      }
+    }
+
     const posMap = {};
-    for (const child of laid.children) posMap[child.id] = { x: child.x, y: child.y };
+    layers.forEach((layer, col) => {
+      layer.sort((a, b) => a.y - b.y);           // preserve ELK row order
+      layer.forEach((n, row) => {
+        posMap[n.id] = { x: col * GRID_W, y: row * GRID_H };
+      });
+    });
 
     const updated = nodes.map((n) => ({
       ...n,

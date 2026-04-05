@@ -1,6 +1,11 @@
 .task-node {
   position: relative;
   width: 240px;
+  height: 160px;
+  min-height: 160px;
+  max-height: 160px;
+  overflow: hidden;
+  box-sizing: border-box;
   border-radius: 4px;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -185,13 +190,16 @@
 .task-node--available .task-node__status-label { color: var(--status-available-text); }
 .task-node--completed .task-node__status-label { color: var(--status-completed-text); }
 
-/* ── React Flow Handles — invisible but keep edge routing intact ── */
+/* ── React Flow Handles — invisible, always centered on the node's side ── */
 .task-handle {
   width: 1px !important;
   height: 1px !important;
+  min-width: 1px !important;
+  min-height: 1px !important;
   background: transparent !important;
   border: none !important;
   opacity: 0 !important;
   pointer-events: none !important;
   top: 50% !important;
+  transform: translateY(-50%) !important;
 }
