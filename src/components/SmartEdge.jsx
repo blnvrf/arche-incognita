@@ -70,7 +70,7 @@ export default function SmartEdge({
       <path
         d={d}
         fill="none"
-        stroke={style.stroke ?? 'rgba(180,180,180,0.55)'}
+        stroke={style.stroke ?? 'rgba(148,100,32,0.72)'}
         strokeWidth={style.strokeWidth ?? 4}
         strokeLinecap="round"
         strokeLinejoin="round"

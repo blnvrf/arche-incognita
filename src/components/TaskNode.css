@@ -1,3 +1,23 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Metallic border technique:
+   border is transparent; two background layers fill the box —
+     layer 1 (padding-box)  → solid node interior colour
+     layer 2 (border-box)   → metallic gradient visible only in the border gap
+   This preserves border-radius, which border-image cannot do.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Gold shimmer animation (active only) ── */
+@keyframes gold-shine {
+  0%   { background-position: 0 0, 0%   50%; }
+  50%  { background-position: 0 0, 100% 50%; }
+  100% { background-position: 0 0, 0%   50%; }
+}
+@keyframes gold-glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,200,0,0.45), 0 0 22px rgba(255,170,0,0.18); }
+  50%       { box-shadow: 0 0 18px rgba(255,215,0,0.70), 0 0 36px rgba(255,190,0,0.30); }
+}
+
+/* ── Base ── */
 .task-node {
   position: relative;
   width: 240px;
@@ -6,109 +26,126 @@
   max-height: 160px;
   overflow: hidden;
   box-sizing: border-box;
-  border-radius: 4px;
+  border-radius: 12px;
+  border: 2.5px solid transparent;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
   font-family: var(--font-body);
 }
 
-.task-node:hover {
-  transform: translateY(-1px);
-}
+.task-node:hover { transform: translateY(-1px); }
 
-/* ── Status: locked ── */
+/* ── Status: locked — dimmed silver ── */
 .task-node--locked {
-  background: #111518;
-  border: 1px solid var(--status-locked-border);
-  opacity: 0.55;
+  background-image:
+    linear-gradient(#1a1a1a, #161616),
+    linear-gradient(145deg,
+      #3a3a3a 0%,
+      #606060 20%,
+      #8c8c8c 38%,
+      #a8a8a8 50%,
+      #7a7a7a 62%,
+      #505050 80%,
+      #383838 100%
+    );
+  background-origin: padding-box, border-box;
+  background-clip:   padding-box, border-box;
+  box-shadow: 0 0 8px rgba(110,110,110,0.18);
+  opacity: 0.8;
   cursor: default;
 }
-.task-node--locked .task-node__title { color: var(--status-locked-text); }
+.task-node--locked .task-node__title { color: #888; }
 
-/* ── Status: available ── */
+/* ── Status: available — bronze ── */
 .task-node--available {
-  background: var(--status-available);
-  border: 1px solid var(--status-available-border);
-  box-shadow: 0 0 10px var(--status-available-glow);
+  background-image:
+    linear-gradient(#0d0b09, #110e08),
+    linear-gradient(145deg,
+      #3d1c05 0%,
+      #7a3c10 18%,
+      #c07028 34%,
+      #d4892a 48%,
+      #e09a38 55%,
+      #c07028 65%,
+      #8b4513 80%,
+      #4a200a 100%
+    );
+  background-origin: padding-box, border-box;
+  background-clip:   padding-box, border-box;
+  box-shadow: 0 0 8px rgba(180,100,25,0.22);
 }
-.task-node--available:hover {
-  box-shadow: 0 0 18px var(--status-available-glow);
-}
-.task-node--available .task-node__title { color: #c8e6c8; }
+.task-node--available .task-node__title { color: #d4a060; }
 
-/* ── Status: active (shimmer) ── */
+/* ── Status: active — shiny animated gold ── */
 .task-node--active {
-  background: var(--status-active);
-  border: 1px solid transparent;
-  animation: pulse-glow 2.5s ease-in-out infinite;
+  background-image:
+    linear-gradient(#0f1825, #111e2e),
+    linear-gradient(145deg,
+      #7a5c00 0%,
+      #c49a00 15%,
+      #f0c400 28%,
+      #ffd700 40%,
+      #fff4a8 50%,
+      #ffd700 60%,
+      #e8b400 72%,
+      #b88a00 85%,
+      #7a5c00 100%
+    );
+  background-origin: padding-box, border-box;
+  background-clip:   padding-box, border-box;
+  background-size:   auto, 280% 280%;
+  background-position: 0 0, 0% 50%;
+  animation:
+    gold-shine      3.5s ease-in-out infinite,
+    gold-glow-pulse 2.5s ease-in-out infinite;
 }
-.task-node--active .task-node__title { color: #bde0f7; }
+.task-node--active .task-node__title { color: #cde4f8; }
 
-.task-node__shimmer {
-  position: absolute;
-  inset: -1px;
-  border-radius: 5px;
-  padding: 1px;
-  background: linear-gradient(
-    270deg,
-    #4a8bc4,
-    #7db8dd,
-    #2d6baa,
-    #a8d4f0,
-    #4a8bc4
-  );
-  background-size: 300% 300%;
-  animation: shimmer-border 3s ease infinite;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* ── Status: completed ── */
+/* ── Status: completed — barely-there pewter ── */
 .task-node--completed {
-  background: #0e0e08;
-  border: 1px solid var(--status-completed-border);
-  opacity: 0.7;
+  background-image:
+    linear-gradient(#0e1012, #0e1012),
+    linear-gradient(145deg,
+      #1e1e1e 0%,
+      #2c2c2c 35%,
+      #363636 50%,
+      #242424 70%,
+      #1a1a1a 100%
+    );
+  background-origin: padding-box, border-box;
+  background-clip:   padding-box, border-box;
+  opacity: 0.5;
 }
 .task-node--completed .task-node__title {
-  color: var(--status-completed-text);
+  color: #484848;
   text-decoration: line-through;
-  text-decoration-color: rgba(196, 168, 74, 0.4);
+  text-decoration-color: rgba(100,100,100,0.4);
 }
 
 /* ── Selected ── */
 .task-node--selected {
-  outline: 1px solid rgba(255,255,255,0.2);
+  outline: 1.5px solid rgba(255,255,255,0.25);
   outline-offset: 3px;
 }
 
 /* ── Inner layout ── */
 .task-node__inner {
-  padding: 10px 12px 10px;
+  padding: 10px 12px;
   position: relative;
   z-index: 2;
-}
-
-.task-node__header {
+  height: 100%;
+  box-sizing: border-box;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+  flex-direction: column;
 }
 
-.task-node__emoji {
-  font-size: 18px;
-  line-height: 1;
-}
 
 .task-node__meta {
   display: flex;
   gap: 6px;
   align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
 }
 
 .task-node__time,
@@ -118,25 +155,23 @@
   font-size: 9px;
   letter-spacing: 0.05em;
   padding: 2px 5px;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .task-node__time {
   color: var(--text-secondary);
   background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(255,255,255,0.08);
 }
-
 .task-node__cost {
-  color: #e07070;
-  background: rgba(224, 112, 112, 0.08);
-  border: 1px solid rgba(224, 112, 112, 0.2);
+  color: #d46060;
+  background: rgba(200,80,80,0.08);
+  border: 1px solid rgba(200,80,80,0.18);
 }
-
 .task-node__earn {
-  color: #70c970;
-  background: rgba(112, 201, 112, 0.08);
-  border: 1px solid rgba(112, 201, 112, 0.2);
+  color: #60b860;
+  background: rgba(80,180,80,0.08);
+  border: 1px solid rgba(80,180,80,0.18);
 }
 
 .task-node__title {
@@ -145,14 +180,15 @@
   font-weight: 600;
   letter-spacing: 0.03em;
   line-height: 1.4;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .task-node__benefits {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .task-node__benefit {
@@ -160,22 +196,15 @@
   color: var(--text-secondary);
   line-height: 1.3;
 }
-
 .task-node__benefit::before {
   content: '→ ';
   color: var(--text-muted);
 }
 
 .task-node__status-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
   padding-top: 6px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.task-node__status-icon {
-  font-size: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: auto;
 }
 
 .task-node__status-label {
@@ -186,11 +215,12 @@
   color: var(--text-muted);
 }
 
-.task-node--active .task-node__status-label { color: var(--status-active-text); }
-.task-node--available .task-node__status-label { color: var(--status-available-text); }
-.task-node--completed .task-node__status-label { color: var(--status-completed-text); }
+.task-node--active    .task-node__status-label { color: #7db8dd; }
+.task-node--available .task-node__status-label { color: #b8922a; }
+.task-node--locked    .task-node__status-label { color: #707070; }
+.task-node--completed .task-node__status-label { color: #484848; }
 
-/* ── React Flow Handles — invisible, always centered on the node's side ── */
+/* ── Handles — invisible, pinned to vertical centre ── */
 .task-handle {
   width: 1px !important;
   height: 1px !important;
