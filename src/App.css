@@ -235,3 +235,32 @@
   transform: scale(0.97);
 }
 
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  /* Reposition panel to bottom-center */
+  .react-flow__panel.bottom-left {
+    left: 50% !important;
+    bottom: 16px !important;
+    transform: translateX(-50%) !important;
+  }
+
+  /* Hide the minimap, keep only the legend */
+  .map-panel__map {
+    display: none;
+  }
+
+  /* Remove panel chrome — legend floats cleanly */
+  .map-panel {
+    background: rgba(9,11,15,0.72);
+    width: auto;
+    border-radius: 5px;
+  }
+
+  .map-panel__legend {
+    border-top: none;
+    justify-content: center;
+    gap: 14px;
+    padding: 8px 16px;
+  }
+}
+
