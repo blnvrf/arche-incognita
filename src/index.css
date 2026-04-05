@@ -71,7 +71,7 @@ html, body, #root {
 ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
 
 /* React Flow overrides */
-.react-flow__background { background: var(--bg-void); }
+.react-flow__background { background: transparent; }
 .react-flow__edge-path { stroke: var(--edge-color); stroke-width: 1.5; }
 .react-flow__edge.animated .react-flow__edge-path { stroke: var(--edge-color-active); }
 .react-flow__controls { display: none; }
@@ -109,4 +109,18 @@ html, body, #root {
 @keyframes shimmer-flow {
   0%   { background-position: 160% center; }
   100% { background-position: -60% center; }
+}
+
+/* Metallic border orbit — used on nodes, focusbar, + button */
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes border-orbit {
+  to { --border-angle: 360deg; }
+}
+@keyframes gold-glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,200,0,0.30), 0 0 18px rgba(255,170,0,0.10); }
+  50%       { box-shadow: 0 0 14px rgba(255,215,0,0.50), 0 0 28px rgba(255,190,0,0.18); }
 }

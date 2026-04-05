@@ -15,6 +15,7 @@ import SmartEdge from './components/SmartEdge';
 import NodeSidebar from './components/NodeSidebar';
 import FocusBar from './components/FocusBar';
 import BalanceCounter from './components/BalanceCounter';
+import worldMap from './assets/old world map.png';
 import './App.css';
 
 const nodeTypes = { taskNode: TaskNode };
@@ -183,7 +184,7 @@ export default function App() {
   const onPaneClick = useCallback(() => {}, []);
 
   return (
-    <div className="app">
+    <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.78),rgba(9,11,15,0.78)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
       {/* Top bar */}
       <div className="topbar">
         <div className="topbar__logo">

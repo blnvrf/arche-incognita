@@ -3,8 +3,8 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-void);
   position: relative;
+  background: transparent;
 }
 
 /* ── Topbar ── */
@@ -38,11 +38,11 @@
   height: 1px;
   background: linear-gradient(90deg,
     transparent 0%,
-    transparent 28%,
-    rgba(200,155,0,0.25) 38%,
-    rgba(255,215,0,0.88) 50%,
-    rgba(200,155,0,0.25) 62%,
-    transparent 72%,
+    transparent 46%,
+    rgba(180,135,0,0.2) 48%,
+    rgba(220,175,0,0.62) 50%,
+    rgba(180,135,0,0.2) 52%,
+    transparent 54%,
     transparent 100%
   );
   animation: border-gold-slide 22s linear infinite;

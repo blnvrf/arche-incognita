@@ -6,19 +6,6 @@
    This preserves border-radius, which border-image cannot do.
 ───────────────────────────────────────────────────────────────────────────── */
 
-/* ── Shared border orbit animation ── */
-@property --border-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-@keyframes border-orbit {
-  to { --border-angle: 360deg; }
-}
-@keyframes gold-glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(255,200,0,0.30), 0 0 18px rgba(255,170,0,0.10); }
-  50%       { box-shadow: 0 0 14px rgba(255,215,0,0.50), 0 0 28px rgba(255,190,0,0.18); }
-}
 
 /* ── Base ── */
 .task-node {
