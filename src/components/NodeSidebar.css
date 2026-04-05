@@ -295,6 +295,14 @@
   flex: 1;
 }
 
+.btn--sort {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  padding: 9px 12px;
+}
+.btn--sort:hover { color: var(--text-primary); }
+
 .btn--danger {
   background: rgba(180, 60, 60, 0.15);
   color: #e07070;

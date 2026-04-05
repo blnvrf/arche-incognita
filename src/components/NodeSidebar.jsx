@@ -388,7 +388,7 @@ export default function NodeSidebar() {
         <button className="btn btn--primary" onClick={handleSubmit}>
           {isEditing ? 'Save Changes' : 'Add Task'}
         </button>
-        {isEditing && (
+{isEditing && (
           <button className="btn btn--danger" onClick={handleDelete}>
             <Trash2 size={14} />
           </button>

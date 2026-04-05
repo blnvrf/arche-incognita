@@ -15,7 +15,7 @@ import SmartEdge from './components/SmartEdge';
 import NodeSidebar from './components/NodeSidebar';
 import FocusBar from './components/FocusBar';
 import BalanceCounter from './components/BalanceCounter';
-import { Save, FolderOpen } from 'lucide-react';
+import { Save, FolderOpen, RefreshCw } from 'lucide-react';
 import worldMap from './assets/old world map.png';
 import './App.css';
 
@@ -176,7 +176,7 @@ export default function App() {
   const {
     nodes,
     onNodesChange,
-    openAddSidebar, autoLayout,
+    openAddSidebar, autoLayout, refreshStatuses,
     sidebarOpen, loadGraph,
   } = useStore();
 
@@ -212,7 +212,7 @@ export default function App() {
   };
 
   return (
-    <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.78),rgba(9,11,15,0.78)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat' }}>
+    <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.55),rgba(9,11,15,0.55)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat', backgroundOrigin: 'content-box', paddingTop: '56px' }}>
       {/* Top bar */}
       <div className="topbar">
         <div className="topbar__logo">
@@ -224,9 +224,6 @@ export default function App() {
         </div>
 
         <div className="topbar__actions">
-          <button className="topbar__btn" onClick={autoLayout} title="Auto-layout graph">
-            ⊞ Sort
-          </button>
           <BalanceCounter />
         </div>
       </div>
@@ -262,8 +259,9 @@ export default function App() {
         </ReactFlow>
       </div>
 
-      {/* FAB cluster — Export / Import / Add */}
+      {/* FAB cluster — Refresh / Export / Import / Add */}
       <div className="fab-cluster">
+        <button className="fab-btn" onClick={() => { autoLayout(); }} title="Sort & recalculate"><RefreshCw size={18} strokeWidth={1.8} /></button>
         <button className="fab-btn" onClick={handleExport} title="Export graph"><Save size={18} strokeWidth={1.8} /></button>
         <button className="fab-btn" onClick={() => fileInputRef.current?.click()} title="Import graph"><FolderOpen size={18} strokeWidth={1.8} /></button>
         <button className="add-btn" onClick={openAddSidebar} title="Add new task">+</button>

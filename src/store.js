@@ -109,21 +109,32 @@ function saveToStorage(nodes, edges, balance) {
 }
 
 // Re-evaluate locked/available status for every non-active, non-completed node.
-// requiresAll (default true): all prereqs must be completed.
-// requiresAll false: any one prereq being completed is enough.
+// A node is available when all its prerequisite tasks are completed (requiresAll=true)
+// or at least one is completed (requiresAll=false). No prereqs → always available.
+// Enforces single-active: if multiple active nodes exist, keeps the first and reverts the rest.
 function recomputeStatuses(nodes, edges) {
   const completedIds = new Set(nodes.filter((n) => n.data.status === 'completed').map((n) => n.id));
-  return nodes.map((n) => {
-    if (n.data.status === 'active' || n.data.status === 'completed') return n;
-    const prereqs = edges.filter((e) => e.target === n.id).map((e) => e.source);
-    if (prereqs.length === 0) {
-      const next = 'available';
-      return n.data.status === next ? n : { ...n, data: { ...n.data, status: next } };
+
+  // Enforce single-active
+  let activeSeenId = null;
+  const sanitized = nodes.map((n) => {
+    if (n.data.status === 'active') {
+      if (!activeSeenId) { activeSeenId = n.id; return n; }
+      return { ...n, data: { ...n.data, status: 'available' } };
     }
-    const requiresAll = n.data.requiresAll !== false;
-    const satisfied = requiresAll
-      ? prereqs.every((pid) => completedIds.has(pid))
-      : prereqs.some((pid) => completedIds.has(pid));
+    return n;
+  });
+
+  return sanitized.map((n) => {
+    if (n.data.status === 'active' || n.data.status === 'completed') return n;
+
+    const prereqs = edges.filter((e) => e.target === n.id).map((e) => e.source);
+    const satisfied = prereqs.length === 0
+      ? true
+      : (n.data.requiresAll !== false)
+        ? prereqs.every((pid) => completedIds.has(pid))
+        : prereqs.some((pid) => completedIds.has(pid));
+
     const next = satisfied ? 'available' : 'locked';
     return n.data.status === next ? n : { ...n, data: { ...n.data, status: next } };
   });
@@ -178,10 +189,10 @@ export const useStore = create((set, get) => ({
   },
 
   refreshStatuses: () => {
-    const { nodes, edges } = get();
+    const { nodes, edges, balance } = get();
     const updated = recomputeStatuses(nodes, edges);
     set({ nodes: updated });
-    saveToStorage(updated, edges, get().balance);
+    saveToStorage(updated, edges, balance);
   },
 
   setBalance: (balance) => {
@@ -223,22 +234,20 @@ export const useStore = create((set, get) => ({
   },
 
   completeNode: (id) => {
-    const { nodes, balance } = get();
+    const { nodes, balance, edges } = get();
     const node = nodes.find((n) => n.id === id);
     if (!node) return;
-
     const newBalance = balance + (node.data.moneyDelta || 0);
-    const edges = get().edges;
     const marked = nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, status: 'completed' } } : n
     );
     const final = recomputeStatuses(marked, edges);
-
     set({ nodes: final, balance: newBalance, activeNodeId: null });
     saveToStorage(final, edges, newBalance);
   },
 
   addNode: (nodeData) => {
+    const { nodes, edges, balance } = get();
     const id = `node-${Date.now()}`;
     const newNode = {
       id,
@@ -246,34 +255,37 @@ export const useStore = create((set, get) => ({
       position: { x: 200 + Math.random() * 200, y: 200 + Math.random() * 200 },
       data: { ...nodeData, status: 'available' },
     };
-    const nodes = [...get().nodes, newNode];
-    set({ nodes });
-    saveToStorage(nodes, get().edges, get().balance);
+    const updated = recomputeStatuses([...nodes, newNode], edges);
+    set({ nodes: updated });
+    saveToStorage(updated, edges, balance);
     return id;
   },
 
   updateNode: (id, nodeData) => {
-    const nodes = get().nodes.map((n) =>
+    const { edges, balance } = get();
+    const patched = get().nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, ...nodeData } } : n
     );
+    const nodes = recomputeStatuses(patched, edges);
     set({ nodes });
-    saveToStorage(nodes, get().edges, get().balance);
+    saveToStorage(nodes, edges, balance);
   },
 
   deleteNode: (id) => {
+    const { balance } = get();
     const edges = get().edges.filter((e) => e.source !== id && e.target !== id);
     const nodes = recomputeStatuses(
       get().nodes.filter((n) => n.id !== id),
       edges
     );
     set({ nodes, edges, activeNodeId: get().activeNodeId === id ? null : get().activeNodeId });
-    saveToStorage(nodes, edges, get().balance);
+    saveToStorage(nodes, edges, balance);
   },
 
   loadGraph: (data) => {
     const edges = (data.edges ?? []).map((e) => ({ ...e, type: 'smart' }));
-    const nodes = recomputeStatuses(data.nodes ?? [], edges);
     const balance = data.balance ?? 0;
+    const nodes = recomputeStatuses(data.nodes ?? [], edges);
     set({ nodes, edges, balance, activeNodeId: null, sidebarOpen: false, editingNode: null });
     saveToStorage(nodes, edges, balance);
   },
@@ -326,12 +338,14 @@ export const useStore = create((set, get) => ({
       });
     });
 
-    const updated = nodes.map((n) => ({
+    const { balance } = get();
+    const positioned = nodes.map((n) => ({
       ...n,
       position: posMap[n.id] ?? n.position,
     }));
+    const updated = recomputeStatuses(positioned, edges);
 
     set({ nodes: updated });
-    saveToStorage(updated, edges, get().balance);
+    saveToStorage(updated, edges, balance);
   },
 }));
