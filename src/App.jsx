@@ -212,7 +212,7 @@ export default function App() {
   };
 
   return (
-    <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.78),rgba(9,11,15,0.78)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+    <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.78),rgba(9,11,15,0.78)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat' }}>
       {/* Top bar */}
       <div className="topbar">
         <div className="topbar__logo">
