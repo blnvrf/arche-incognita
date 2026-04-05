@@ -115,10 +115,10 @@
   border-radius: 1px;
   flex-shrink: 0;
 }
-.legend__dot--locked    { background: var(--status-locked-border); }
-.legend__dot--available { background: var(--status-available-border); }
-.legend__dot--active    { background: var(--status-active-border); }
-.legend__dot--completed { background: var(--status-completed-border); }
+.legend__dot--locked    { background: #8c8c8c; opacity: 0.8; }
+.legend__dot--available { background: #c07028; }
+.legend__dot--active    { background: #ffd700; }
+.legend__dot--completed { background: #363636; opacity: 0.5; }
 
 /* ── Canvas ── */
 .canvas-wrap {
