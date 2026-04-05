@@ -13,6 +13,7 @@ const DEFAULT_FORM = {
   moneyDelta: '',
   benefits: '',
   notes: '',
+  requiresAll: true,
 };
 
 export default function NodeSidebar() {
@@ -32,6 +33,7 @@ export default function NodeSidebar() {
         moneyDelta: editingNode.data.moneyDelta != null ? String(editingNode.data.moneyDelta) : '',
         benefits: (editingNode.data.benefits || []).join('\n'),
         notes: editingNode.data.notes || '',
+        requiresAll: editingNode.data.requiresAll !== false,
       });
     } else {
       setForm(DEFAULT_FORM);
@@ -52,6 +54,7 @@ export default function NodeSidebar() {
       moneyDelta: parseFloat(form.moneyDelta) || 0,
       benefits: form.benefits.split('\n').map((b) => b.trim()).filter(Boolean),
       notes: form.notes.trim(),
+      requiresAll: form.requiresAll,
     };
     if (sidebarMode === 'add') {
       const newId = addNode(nodeData);
@@ -197,7 +200,17 @@ export default function NodeSidebar() {
         {/* Requires — add mode */}
         {!isEditing && (
           <div className="field">
-            <label className="field__label">Requires</label>
+            <div className="field__label-row">
+              <label className="field__label">Requires</label>
+              <label className="field__check">
+                <input
+                  type="checkbox"
+                  checked={form.requiresAll}
+                  onChange={(e) => setForm({ ...form, requiresAll: e.target.checked })}
+                />
+                All required
+              </label>
+            </div>
             <div className="rel-list">
               {newPrereqs.map((pid) => {
                 const n = nodes.find((x) => x.id === pid);
@@ -269,7 +282,17 @@ export default function NodeSidebar() {
         {/* Requires (incoming edges) */}
         {isEditing && (
           <div className="field">
-            <label className="field__label">Requires</label>
+            <div className="field__label-row">
+              <label className="field__label">Requires</label>
+              <label className="field__check">
+                <input
+                  type="checkbox"
+                  checked={form.requiresAll}
+                  onChange={(e) => setForm({ ...form, requiresAll: e.target.checked })}
+                />
+                All required
+              </label>
+            </div>
             <div className="rel-list">
               {requiresNodes.map((n) => {
                 const edge = requiresEdges.find((e) => e.source === n.id);

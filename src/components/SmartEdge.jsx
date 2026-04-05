@@ -1,5 +1,6 @@
 import { useEdges } from '@xyflow/react';
 import { useMemo } from 'react';
+import { useStore } from '../store';
 
 const JUNCTION_OFFSET = 80; // px from node where the vertical stem sits
 const R = 24;               // corner radius
@@ -34,6 +35,8 @@ export default function SmartEdge({
   markerEnd,
 }) {
   const edges = useEdges();
+  const targetNode = useStore((s) => s.nodes.find((n) => n.id === target));
+  const dashed = targetNode?.data?.requiresAll === false;
 
   const d = useMemo(() => {
     const multiOut = edges.filter((e) => e.source === source).length > 1;
@@ -80,6 +83,7 @@ export default function SmartEdge({
         strokeWidth={style.strokeWidth ?? 4}
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeDasharray={dashed ? '8 12' : undefined}
         markerEnd={markerEnd}
       />
       {/* gradient shine overlay */}
@@ -90,6 +94,7 @@ export default function SmartEdge({
         strokeWidth={style.strokeWidth ?? 4}
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeDasharray={dashed ? '8 12' : undefined}
       />
     </>
   );

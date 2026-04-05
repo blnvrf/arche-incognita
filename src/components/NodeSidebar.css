@@ -72,6 +72,34 @@
   color: var(--text-secondary);
 }
 
+.field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.field__label-row .field__label {
+  margin-bottom: 0;
+}
+
+.field__check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.field__check input[type="checkbox"] {
+  accent-color: #c07028;
+  width: 11px;
+  height: 11px;
+  cursor: pointer;
+}
+
 .field__hint {
   font-family: var(--font-body);
   font-size: 10px;

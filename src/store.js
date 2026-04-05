@@ -109,16 +109,23 @@ function saveToStorage(nodes, edges, balance) {
 }
 
 // Re-evaluate locked/available status for every non-active, non-completed node.
-// A node is available when it has no prereqs OR all prereqs are completed.
+// requiresAll (default true): all prereqs must be completed.
+// requiresAll false: any one prereq being completed is enough.
 function recomputeStatuses(nodes, edges) {
   const completedIds = new Set(nodes.filter((n) => n.data.status === 'completed').map((n) => n.id));
   return nodes.map((n) => {
     if (n.data.status === 'active' || n.data.status === 'completed') return n;
     const prereqs = edges.filter((e) => e.target === n.id).map((e) => e.source);
-    const allDone = prereqs.length === 0 || prereqs.every((pid) => completedIds.has(pid));
-    const next = allDone ? 'available' : 'locked';
-    if (n.data.status === next) return n;
-    return { ...n, data: { ...n.data, status: next } };
+    if (prereqs.length === 0) {
+      const next = 'available';
+      return n.data.status === next ? n : { ...n, data: { ...n.data, status: next } };
+    }
+    const requiresAll = n.data.requiresAll !== false;
+    const satisfied = requiresAll
+      ? prereqs.every((pid) => completedIds.has(pid))
+      : prereqs.some((pid) => completedIds.has(pid));
+    const next = satisfied ? 'available' : 'locked';
+    return n.data.status === next ? n : { ...n, data: { ...n.data, status: next } };
   });
 }
 

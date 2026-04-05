@@ -55,7 +55,6 @@
   background-origin: padding-box, border-box;
   background-clip:   padding-box, border-box;
   box-shadow: 0 0 8px rgba(110,110,110,0.18);
-  opacity: 0.8;
   cursor: default;
   animation: border-orbit 13s linear infinite;
 }
@@ -117,7 +116,6 @@
     );
   background-origin: padding-box, border-box;
   background-clip:   padding-box, border-box;
-  opacity: 0.5;
 }
 .task-node--completed .task-node__title {
   color: #484848;
