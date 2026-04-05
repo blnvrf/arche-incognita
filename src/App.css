@@ -19,14 +19,42 @@
   justify-content: space-between;
   padding: 0 20px;
   z-index: 50;
-  background: linear-gradient(180deg, rgba(9,11,15,0.98) 0%, rgba(9,11,15,0.7) 100%);
-  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, rgba(6,8,20,0.98) 0%, rgba(8,11,25,0.92) 100%);
+  overflow: hidden;
+}
+
+/* Animated gold bottom border */
+@keyframes border-gold-slide {
+  0%   { transform: translateX(-33%); }
+  100% { transform: translateX(67%);  }
+}
+
+.topbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -100%;
+  width: 300%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    transparent 28%,
+    rgba(200,155,0,0.25) 38%,
+    rgba(255,215,0,0.88) 50%,
+    rgba(200,155,0,0.25) 62%,
+    transparent 72%,
+    transparent 100%
+  );
+  animation: border-gold-slide 22s linear infinite;
+  pointer-events: none;
 }
 
 .topbar__logo {
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 .topbar__logo-symbol {
@@ -65,12 +93,15 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
+  z-index: 1;
 }
 
 .topbar__actions {
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 .topbar__btn {
@@ -158,8 +189,8 @@
   50%       { box-shadow: 0 0 10px rgba(255,200,0,0.16), 0 4px 14px rgba(0,0,0,0.45); }
 }
 @keyframes plus-shine {
-  0%, 100% { color: rgba(255,215,0,0.45); text-shadow: none; }
-  50%       { color: rgba(255,244,160,0.95); text-shadow: 0 0 10px rgba(255,215,0,0.55); }
+  0%, 100% { color: #ffd700; text-shadow: 0 0 6px rgba(255,215,0,0.5); }
+  50%       { color: #fff4a8; text-shadow: 0 0 14px rgba(255,244,160,0.8), 0 0 4px rgba(255,215,0,1); }
 }
 
 .add-btn {
@@ -181,7 +212,7 @@
     );
   background-origin: padding-box, border-box;
   background-clip:   padding-box, border-box;
-  color: rgba(255, 215, 0, 0.6);
+  color: #ffd700;
   font-size: 26px;
   line-height: 1;
   cursor: pointer;
@@ -193,6 +224,7 @@
   animation: add-btn-orbit 7s linear infinite, add-btn-glow 5s ease-in-out infinite, plus-shine 7s ease-in-out infinite;
   transition: transform 0.15s;
 }
+
 
 .add-btn:hover {
   box-shadow: 0 0 12px rgba(255,200,0,0.18), 0 4px 18px rgba(0,0,0,0.55);

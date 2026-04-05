@@ -1,4 +1,5 @@
 .focus-bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -6,8 +7,21 @@
   border: 1px solid rgba(255,215,0,0.45);
   border-radius: 5px;
   box-shadow: 0 0 12px rgba(255,215,0,0.15);
-  padding: 5px 10px;
-  max-width: 480px;
+  padding: 5px 12px;
+  min-width: 480px;
+  max-width: 680px;
+  overflow: hidden;
+}
+
+.focus-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 45% 200% at center, rgba(70, 145, 255, 0.08) 0%, transparent 65%);
+  background-size: 200% 100%;
+  animation: shimmer-flow 30s linear infinite;
+  pointer-events: none;
+  border-radius: inherit;
 }
 
 .focus-bar__indicator {

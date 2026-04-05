@@ -104,3 +104,9 @@ html, body, #root {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Radial shimmer — used on topbar, focusbar, active node, + button */
+@keyframes shimmer-flow {
+  0%   { background-position: 160% center; }
+  100% { background-position: -60% center; }
+}

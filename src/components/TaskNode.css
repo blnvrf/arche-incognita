@@ -103,6 +103,18 @@
 }
 .task-node--active .task-node__title { color: #f0c840; }
 
+.task-node--active::after {
+  content: '';
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 10px;
+  background: radial-gradient(ellipse 70% 120% at center, rgba(70, 145, 255, 0.09) 0%, transparent 65%);
+  background-size: 200% 100%;
+  animation: shimmer-flow 26s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* ── Status: completed — barely-there pewter ── */
 .task-node--completed {
   background-image:
