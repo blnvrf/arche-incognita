@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { addEdge, applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
+import ELK from 'elkjs/lib/elk.bundled.js';
 
 const STORAGE_KEY = 'arche-incognita-graph';
 
@@ -217,49 +218,39 @@ export const useStore = create((set, get) => ({
     saveToStorage(nodes, edges, get().balance);
   },
 
-  autoLayout: () => {
+  autoLayout: async () => {
     const { nodes, edges } = get();
-    // Kahn's algorithm for topological sort + tier assignment
-    const inDegree = {};
-    const adj = {};
-    nodes.forEach((n) => { inDegree[n.id] = 0; adj[n.id] = []; });
-    edges.forEach((e) => { inDegree[e.target]++; adj[e.source].push(e.target); });
+    const elk = new ELK();
 
-    const queue = nodes.filter((n) => inDegree[n.id] === 0).map((n) => n.id);
-    const tier = {};
-    queue.forEach((id) => (tier[id] = 0));
+    const graph = {
+      id: 'root',
+      layoutOptions: {
+        'elk.algorithm': 'layered',
+        'elk.direction': 'RIGHT',
+        'elk.layered.spacing.nodeNodeBetweenLayers': '320',
+        'elk.spacing.nodeNode': '100',
+      },
+      children: nodes.map((n) => ({
+        id: n.id,
+        width:  n.measured?.width  ?? 240,
+        height: n.measured?.height ?? 140,
+      })),
+      edges: edges.map((e) => ({
+        id: e.id,
+        sources: [e.source],
+        targets: [e.target],
+      })),
+    };
 
-    while (queue.length) {
-      const cur = queue.shift();
-      adj[cur].forEach((next) => {
-        tier[next] = Math.max(tier[next] || 0, (tier[cur] || 0) + 1);
-        inDegree[next]--;
-        if (inDegree[next] === 0) queue.push(next);
-      });
-    }
+    const laid = await elk.layout(graph);
 
-    const tierGroups = {};
-    nodes.forEach((n) => {
-      const t = tier[n.id] || 0;
-      if (!tierGroups[t]) tierGroups[t] = [];
-      tierGroups[t].push(n.id);
-    });
+    const posMap = {};
+    for (const child of laid.children) posMap[child.id] = { x: child.x, y: child.y };
 
-    const X_GAP = 400;
-    const Y_GAP = 180;
-    const updated = nodes.map((n) => {
-      const t = tier[n.id] || 0;
-      const group = tierGroups[t];
-      const idx = group.indexOf(n.id);
-      const totalH = (group.length - 1) * Y_GAP;
-      return {
-        ...n,
-        position: {
-          x: 80 + t * X_GAP,
-          y: 100 + idx * Y_GAP - totalH / 2 + 300,
-        },
-      };
-    });
+    const updated = nodes.map((n) => ({
+      ...n,
+      position: posMap[n.id] ?? n.position,
+    }));
 
     set({ nodes: updated });
     saveToStorage(updated, edges, get().balance);

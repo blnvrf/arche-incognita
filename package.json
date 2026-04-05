@@ -15,6 +15,7 @@
     "@fontsource/cinzel": "^5.2.8",
     "@fontsource/crimson-text": "^5.2.7",
     "@xyflow/react": "^12.10.2",
+    "elkjs": "^0.11.1",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
