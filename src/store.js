@@ -209,6 +209,19 @@ export const useStore = create((set, get) => ({
     saveToStorage(updated, get().edges, get().balance);
   },
 
+  uncompleteNode: (id) => {
+    const { nodes, edges, balance } = get();
+    const node = nodes.find((n) => n.id === id);
+    if (!node) return;
+    const newBalance = balance - (node.data.moneyDelta || 0);
+    const marked = nodes.map((n) =>
+      n.id === id ? { ...n, data: { ...n.data, status: 'available' } } : n
+    );
+    const final = recomputeStatuses(marked, edges);
+    set({ nodes: final, balance: newBalance, activeNodeId: null });
+    saveToStorage(final, edges, newBalance);
+  },
+
   completeNode: (id) => {
     const { nodes, balance } = get();
     const node = nodes.find((n) => n.id === id);

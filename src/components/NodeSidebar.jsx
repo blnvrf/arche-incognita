@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Trash2, Check } from 'lucide-react';
+import { X, Trash2, Check, RotateCcw } from 'lucide-react';
 import { useStore } from '../store';
 import { ICON_LIST, ICON_MAP } from '../icons';
 import './NodeSidebar.css';
@@ -16,7 +16,7 @@ const DEFAULT_FORM = {
 };
 
 export default function NodeSidebar() {
-  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, addEdgeBetween, removeEdge, autoLayout, nodes, edges } = useStore();
+  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, uncompleteNode, addEdgeBetween, removeEdge, autoLayout, nodes, edges } = useStore();
 
   const [form, setForm] = useState(DEFAULT_FORM);
   const [newPrereqs, setNewPrereqs] = useState([]);
@@ -377,6 +377,12 @@ export default function NodeSidebar() {
           <button className="btn btn--complete" onClick={handleComplete}>
             <Check size={14} />
             Mark Complete
+          </button>
+        )}
+        {isEditing && nodeStatus === 'completed' && (
+          <button className="btn btn--uncomplete" onClick={() => { uncompleteNode(editingNode.id); closeSidebar(); }}>
+            <RotateCcw size={14} />
+            Set Available
           </button>
         )}
         <button className="btn btn--primary" onClick={handleSubmit}>

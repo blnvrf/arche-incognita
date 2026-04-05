@@ -21,9 +21,9 @@ export default function FocusBar() {
   };
 
   return (
+    <div className="focus-bar-wrap">
     <div className="focus-bar" style={{ animation: 'slide-in-up 0.25s ease' }}>
       <div className="focus-bar__indicator" />
-      <span className="focus-bar__emoji">{activeNode.data.emoji}</span>
       <div className="focus-bar__content">
         <span className="focus-bar__label">Currently Doing</span>
         <span className="focus-bar__title">{activeNode.data.title}</span>
@@ -38,6 +38,7 @@ export default function FocusBar() {
         <Check size={14} />
         Complete
       </button>
+    </div>
     </div>
   );
 }
