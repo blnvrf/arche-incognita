@@ -163,14 +163,14 @@ export const useStore = create((set, get) => ({
   closeSidebar: () => set({ sidebarOpen: false, editingNode: null }),
 
   setActiveNode: (id) => {
-    const { nodes, activeNodeId } = get();
-    // Deactivate previous
+    const { nodes } = get();
     const updated = nodes.map((n) => {
-      if (n.id === activeNodeId && n.data.status === 'active') {
-        return { ...n, data: { ...n.data, status: 'available' } };
-      }
       if (n.id === id && n.data.status === 'available') {
         return { ...n, data: { ...n.data, status: 'active' } };
+      }
+      // Revert every other active node back to available
+      if (n.id !== id && n.data.status === 'active') {
+        return { ...n, data: { ...n.data, status: 'available' } };
       }
       return n;
     });
