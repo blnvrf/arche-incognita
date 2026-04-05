@@ -16,9 +16,11 @@ const DEFAULT_FORM = {
 };
 
 export default function NodeSidebar() {
-  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, addEdgeBetween, removeEdge, nodes, edges } = useStore();
+  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, addEdgeBetween, removeEdge, autoLayout, nodes, edges } = useStore();
 
   const [form, setForm] = useState(DEFAULT_FORM);
+  const [newPrereqs, setNewPrereqs] = useState([]);
+  const [newUnlocks, setNewUnlocks] = useState([]);
 
   useEffect(() => {
     if (sidebarMode === 'edit' && editingNode) {
@@ -33,12 +35,14 @@ export default function NodeSidebar() {
       });
     } else {
       setForm(DEFAULT_FORM);
+      setNewPrereqs([]);
+      setNewUnlocks([]);
     }
   }, [sidebarMode, editingNode]);
 
   if (!sidebarOpen) return null;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.title.trim()) return;
     const nodeData = {
       title: form.title.trim(),
@@ -50,9 +54,13 @@ export default function NodeSidebar() {
       notes: form.notes.trim(),
     };
     if (sidebarMode === 'add') {
-      addNode(nodeData);
+      const newId = addNode(nodeData);
+      newPrereqs.forEach((pid) => addEdgeBetween(pid, newId));
+      newUnlocks.forEach((uid) => addEdgeBetween(newId, uid));
+      await autoLayout();
     } else {
       updateNode(editingNode.id, nodeData);
+      await autoLayout();
     }
     closeSidebar();
   };
@@ -185,6 +193,88 @@ export default function NodeSidebar() {
             rows={2}
           />
         </div>
+
+        {/* Requires — add mode */}
+        {!isEditing && (
+          <div className="field">
+            <label className="field__label">Requires</label>
+            <div className="rel-list">
+              {newPrereqs.map((pid) => {
+                const n = nodes.find((x) => x.id === pid);
+                if (!n) return null;
+                return (
+                  <div key={pid} className={`rel-item rel-item--${n.data.status}`}>
+                    <span className="rel-item__title">{n.data.title}</span>
+                    <button className="rel-item__remove" onClick={() => setNewPrereqs(newPrereqs.filter((id) => id !== pid))}>
+                      <X size={10} />
+                    </button>
+                  </div>
+                );
+              })}
+              {newPrereqs.length === 0 && <p className="field__hint">No prerequisites.</p>}
+            </div>
+            {nodes.filter((n) => !newPrereqs.includes(n.id)).length > 0 && (
+              <div className="rel-add">
+                <select className="rel-add__select" id="new-req-select" defaultValue="">
+                  <option value="" disabled>Add prerequisite…</option>
+                  {nodes.filter((n) => !newPrereqs.includes(n.id)).map((n) => (
+                    <option key={n.id} value={n.id}>{n.data.title}</option>
+                  ))}
+                </select>
+                <button
+                  className="rel-add__btn"
+                  onClick={() => {
+                    const sel = document.getElementById('new-req-select');
+                    if (sel.value) { setNewPrereqs([...newPrereqs, sel.value]); sel.value = ''; }
+                  }}
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Unlocks — add mode */}
+        {!isEditing && (
+          <div className="field">
+            <label className="field__label">Unlocks</label>
+            <div className="rel-list">
+              {newUnlocks.map((uid) => {
+                const n = nodes.find((x) => x.id === uid);
+                if (!n) return null;
+                return (
+                  <div key={uid} className={`rel-item rel-item--${n.data.status}`}>
+                    <span className="rel-item__title">{n.data.title}</span>
+                    <button className="rel-item__remove" onClick={() => setNewUnlocks(newUnlocks.filter((id) => id !== uid))}>
+                      <X size={10} />
+                    </button>
+                  </div>
+                );
+              })}
+              {newUnlocks.length === 0 && <p className="field__hint">Unlocks nothing yet.</p>}
+            </div>
+            {nodes.filter((n) => !newUnlocks.includes(n.id)).length > 0 && (
+              <div className="rel-add">
+                <select className="rel-add__select" id="new-unl-select" defaultValue="">
+                  <option value="" disabled>Add unlock…</option>
+                  {nodes.filter((n) => !newUnlocks.includes(n.id)).map((n) => (
+                    <option key={n.id} value={n.id}>{n.data.title}</option>
+                  ))}
+                </select>
+                <button
+                  className="rel-add__btn"
+                  onClick={() => {
+                    const sel = document.getElementById('new-unl-select');
+                    if (sel.value) { setNewUnlocks([...newUnlocks, sel.value]); sel.value = ''; }
+                  }}
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Requires (incoming edges) */}
         {isEditing && (

@@ -108,7 +108,24 @@ function saveToStorage(nodes, edges, balance) {
   } catch {}
 }
 
-const saved = loadFromStorage();
+// Re-evaluate locked/available status for every non-active, non-completed node.
+// A node is available when it has no prereqs OR all prereqs are completed.
+function recomputeStatuses(nodes, edges) {
+  const completedIds = new Set(nodes.filter((n) => n.data.status === 'completed').map((n) => n.id));
+  return nodes.map((n) => {
+    if (n.data.status === 'active' || n.data.status === 'completed') return n;
+    const prereqs = edges.filter((e) => e.target === n.id).map((e) => e.source);
+    const allDone = prereqs.length === 0 || prereqs.every((pid) => completedIds.has(pid));
+    const next = allDone ? 'available' : 'locked';
+    if (n.data.status === next) return n;
+    return { ...n, data: { ...n.data, status: next } };
+  });
+}
+
+const _saved = loadFromStorage();
+const saved = _saved
+  ? { ..._saved, nodes: recomputeStatuses(_saved.nodes ?? [], _saved.edges ?? []) }
+  : null;
 
 export const useStore = create((set, get) => ({
   nodes: saved?.nodes ?? sampleNodes,
@@ -153,6 +170,13 @@ export const useStore = create((set, get) => ({
     saveToStorage(get().nodes, edges, get().balance);
   },
 
+  refreshStatuses: () => {
+    const { nodes, edges } = get();
+    const updated = recomputeStatuses(nodes, edges);
+    set({ nodes: updated });
+    saveToStorage(updated, edges, get().balance);
+  },
+
   setBalance: (balance) => {
     set({ balance });
     saveToStorage(get().nodes, get().edges, balance);
@@ -184,24 +208,11 @@ export const useStore = create((set, get) => ({
     if (!node) return;
 
     const newBalance = balance + (node.data.moneyDelta || 0);
-    const updated = nodes.map((n) => {
-      if (n.id === id) return { ...n, data: { ...n.data, status: 'completed' } };
-      return n;
-    });
-
-    // Re-evaluate locked nodes
-    const completedIds = new Set(updated.filter((n) => n.data.status === 'completed').map((n) => n.id));
     const edges = get().edges;
-    const final = updated.map((n) => {
-      if (n.data.status === 'locked') {
-        const prereqs = edges.filter((e) => e.target === n.id).map((e) => e.source);
-        const prereqsMet = prereqs.every((pid) => completedIds.has(pid));
-        if (prereqsMet && newBalance >= (n.data.cost || 0)) {
-          return { ...n, data: { ...n.data, status: 'available' } };
-        }
-      }
-      return n;
-    });
+    const marked = nodes.map((n) =>
+      n.id === id ? { ...n, data: { ...n.data, status: 'completed' } } : n
+    );
+    const final = recomputeStatuses(marked, edges);
 
     set({ nodes: final, balance: newBalance, activeNodeId: null });
     saveToStorage(final, edges, newBalance);
@@ -218,6 +229,7 @@ export const useStore = create((set, get) => ({
     const nodes = [...get().nodes, newNode];
     set({ nodes });
     saveToStorage(nodes, get().edges, get().balance);
+    return id;
   },
 
   updateNode: (id, nodeData) => {
@@ -229,8 +241,11 @@ export const useStore = create((set, get) => ({
   },
 
   deleteNode: (id) => {
-    const nodes = get().nodes.filter((n) => n.id !== id);
     const edges = get().edges.filter((e) => e.source !== id && e.target !== id);
+    const nodes = recomputeStatuses(
+      get().nodes.filter((n) => n.id !== id),
+      edges
+    );
     set({ nodes, edges, activeNodeId: get().activeNodeId === id ? null : get().activeNodeId });
     saveToStorage(nodes, edges, get().balance);
   },

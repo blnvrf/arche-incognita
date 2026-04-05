@@ -4,10 +4,10 @@
   left: 50%;
   transform: translateX(-50%);
   background: var(--bg-panel);
-  border: 1px solid var(--status-active-border);
+  border: 1px solid #ffd700;
   border-radius: 6px;
   box-shadow:
-    0 0 20px var(--status-active-glow),
+    0 0 20px rgba(255,215,0,0.25),
     0 8px 32px rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
@@ -22,7 +22,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--status-active-text);
+  background: #ffd700;
   flex-shrink: 0;
   animation: pulse-glow 2s ease-in-out infinite;
 }
@@ -45,7 +45,7 @@
   font-size: 8px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--status-active-text);
+  color: #f0c840;
 }
 
 .focus-bar__title {
@@ -91,10 +91,10 @@
   align-items: center;
   gap: 5px;
   padding: 7px 14px;
-  background: var(--status-available);
-  border: 1px solid var(--status-available-border);
+  background: rgba(192,112,40,0.12);
+  border: 1px solid #c07028;
   border-radius: 3px;
-  color: var(--status-available-text);
+  color: #d4a060;
   font-family: var(--font-display);
   font-size: 10px;
   font-weight: 600;
@@ -106,5 +106,5 @@
 }
 .focus-bar__complete:hover {
   opacity: 0.85;
-  box-shadow: 0 0 10px var(--status-available-glow);
+  box-shadow: 0 0 10px rgba(192,112,40,0.35);
 }

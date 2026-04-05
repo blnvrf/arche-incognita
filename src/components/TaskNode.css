@@ -6,15 +6,18 @@
    This preserves border-radius, which border-image cannot do.
 ───────────────────────────────────────────────────────────────────────────── */
 
-/* ── Gold shimmer animation (active only) ── */
-@keyframes gold-shine {
-  0%   { background-position: 0 0, 0%   50%; }
-  50%  { background-position: 0 0, 100% 50%; }
-  100% { background-position: 0 0, 0%   50%; }
+/* ── Shared border orbit animation ── */
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes border-orbit {
+  to { --border-angle: 360deg; }
 }
 @keyframes gold-glow-pulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(255,200,0,0.45), 0 0 22px rgba(255,170,0,0.18); }
-  50%       { box-shadow: 0 0 18px rgba(255,215,0,0.70), 0 0 36px rgba(255,190,0,0.30); }
+  0%, 100% { box-shadow: 0 0 8px rgba(255,200,0,0.30), 0 0 18px rgba(255,170,0,0.10); }
+  50%       { box-shadow: 0 0 14px rgba(255,215,0,0.50), 0 0 28px rgba(255,190,0,0.18); }
 }
 
 /* ── Base ── */
@@ -35,17 +38,18 @@
 
 .task-node:hover { transform: translateY(-1px); }
 
-/* ── Status: locked — dimmed silver ── */
+/* ── Status: locked — silver orbit ── */
 .task-node--locked {
   background-image:
     linear-gradient(#1a1a1a, #161616),
-    linear-gradient(145deg,
-      #3a3a3a 0%,
-      #606060 20%,
-      #8c8c8c 38%,
-      #a8a8a8 50%,
-      #7a7a7a 62%,
-      #505050 80%,
+    conic-gradient(from var(--border-angle),
+      #383838 0%,
+      #383838 28%,
+      #707070 48%,
+      #a8a8a8 62%,
+      #d0d0d0 68%,
+      #a8a8a8 74%,
+      #707070 86%,
       #383838 100%
     );
   background-origin: padding-box, border-box;
@@ -53,51 +57,50 @@
   box-shadow: 0 0 8px rgba(110,110,110,0.18);
   opacity: 0.8;
   cursor: default;
+  animation: border-orbit 13s linear infinite;
 }
 .task-node--locked .task-node__title { color: #888; }
 
-/* ── Status: available — bronze ── */
+/* ── Status: available — bronze orbit ── */
 .task-node--available {
   background-image:
     linear-gradient(#11100c, #16120d),
-    linear-gradient(145deg,
+    conic-gradient(from var(--border-angle),
       #3d1c05 0%,
-      #7a3c10 18%,
-      #c07028 34%,
-      #d4892a 48%,
-      #e09a38 55%,
-      #c07028 65%,
-      #8b4513 80%,
-      #4a200a 100%
+      #3d1c05 30%,
+      #c07028 50%,
+      #e09a38 62%,
+      #f0b458 68%,
+      #e09a38 74%,
+      #c07028 86%,
+      #3d1c05 100%
     );
   background-origin: padding-box, border-box;
   background-clip:   padding-box, border-box;
-  box-shadow: 0 0 8px rgba(180,100,25,0.22);
+  box-shadow: 0 0 8px rgba(180,100,25,0.18);
+  animation: border-orbit 9s linear infinite;
 }
 .task-node--available .task-node__title { color: #d4a060; }
 
-/* ── Status: active — shiny animated gold ── */
+/* ── Status: active — gold orbit ── */
 .task-node--active {
   background-image:
     linear-gradient(#070d14, #090f1a),
-    linear-gradient(145deg,
-      #7a5c00 0%,
-      #c49a00 15%,
-      #f0c400 28%,
-      #ffd700 40%,
-      #fff4a8 50%,
-      #ffd700 60%,
-      #e8b400 72%,
-      #b88a00 85%,
-      #7a5c00 100%
+    conic-gradient(from var(--border-angle),
+      #5a4400 0%,
+      #5a4400 28%,
+      #c49a00 48%,
+      #ffd700 62%,
+      #fff4a8 68%,
+      #ffd700 74%,
+      #c49a00 86%,
+      #5a4400 100%
     );
   background-origin: padding-box, border-box;
   background-clip:   padding-box, border-box;
-  background-size:   auto, 280% 280%;
-  background-position: 0 0, 0% 50%;
   animation:
-    gold-shine      3.5s ease-in-out infinite,
-    gold-glow-pulse 2.5s ease-in-out infinite;
+    border-orbit    7s linear infinite,
+    gold-glow-pulse 5s ease-in-out infinite;
 }
 .task-node--active .task-node__title { color: #f0c840; }
 

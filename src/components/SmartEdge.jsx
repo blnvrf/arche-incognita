@@ -4,36 +4,24 @@ import { useMemo } from 'react';
 const JUNCTION_OFFSET = 80; // px from node where the vertical stem sits
 const R = 24;               // corner radius
 
-// Build an orthogonal 3-segment path (H → V → H) with rounded 90° corners.
-// Each turn is approximated by a quadratic bezier whose control point is the
-// sharp corner and whose endpoints are R px away along each leg.
 function orthoPath(sx, sy, jx, tx, ty) {
   const dy = ty - sy;
-
-  // Degenerate: source and target at same Y → pure horizontal
-  if (Math.abs(dy) < 1) {
-    return `M ${sx} ${sy} L ${tx} ${ty}`;
-  }
+  if (Math.abs(dy) < 1) return `M ${sx} ${sy} L ${tx} ${ty}`;
 
   const sign = dy > 0 ? 1 : -1;
-
-  // Clamp radius so it fits in both the horizontal legs and the vertical leg
   const r = Math.min(R, Math.abs(dy) / 2, (jx - sx) / 2, (tx - jx) / 2);
 
-  // Turn 1: horizontal meets vertical at (jx, sy)
-  const t1x0 = jx - r,      t1y0 = sy;           // approach along H
-  const t1x1 = jx,          t1y1 = sy + sign * r; // depart along V
-
-  // Turn 2: vertical meets horizontal at (jx, ty)
-  const t2x0 = jx,          t2y0 = ty - sign * r; // approach along V
-  const t2x1 = jx + r,      t2y1 = ty;            // depart along H
+  const t1x0 = jx - r, t1y0 = sy;
+  const t1x1 = jx,     t1y1 = sy + sign * r;
+  const t2x0 = jx,     t2y0 = ty - sign * r;
+  const t2x1 = jx + r, t2y1 = ty;
 
   return [
     `M ${sx} ${sy}`,
     `L ${t1x0} ${t1y0}`,
-    `Q ${jx} ${sy} ${t1x1} ${t1y1}`,   // round corner 1 (control = sharp corner)
+    `Q ${jx} ${sy} ${t1x1} ${t1y1}`,
     `L ${t2x0} ${t2y0}`,
-    `Q ${jx} ${ty} ${t2x1} ${t2y1}`,   // round corner 2
+    `Q ${jx} ${ty} ${t2x1} ${t2y1}`,
     `L ${tx} ${ty}`,
   ].join(' ');
 }
@@ -51,11 +39,6 @@ export default function SmartEdge({
     const multiOut = edges.filter((e) => e.source === source).length > 1;
     const multiIn  = edges.filter((e) => e.target === target).length > 1;
 
-    // Junction X — where the shared vertical stem lives.
-    // Fan-out  (1→N): just right of source. All siblings share sourceX → identical
-    //   first H segment and overlapping V portions → one visible stem.
-    // Fan-in   (N→1): just left of target. All siblings share targetX → same effect.
-    // 1-to-1  : midpoint between the two nodes.
     let jx;
     if (multiOut)     jx = sourceX + JUNCTION_OFFSET;
     else if (multiIn) jx = targetX - JUNCTION_OFFSET;
@@ -64,9 +47,32 @@ export default function SmartEdge({
     return orthoPath(sourceX, sourceY, jx, targetX, targetY);
   }, [edges, source, target, sourceX, sourceY, targetX, targetY]);
 
+  const gradId = `edge-shine-${source}-${target}`;
+
   return (
     <>
+      <defs>
+        {/* Wide gradient zone sweeps left→right across the canvas */}
+        <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1="-600" y1="0" x2="600" y2="0">
+          <stop offset="0%"   stopColor="rgba(148,100,32,0)"    />
+          <stop offset="25%"  stopColor="rgba(200,140,45,0.28)" />
+          <stop offset="50%"  stopColor="rgba(255,220,100,0.62)" />
+          <stop offset="75%"  stopColor="rgba(200,140,45,0.28)" />
+          <stop offset="100%" stopColor="rgba(148,100,32,0)"    />
+          <animateTransform
+            attributeName="gradientTransform"
+            type="translate"
+            from="-2200 0"
+            to="3000 0"
+            dur="9s"
+            repeatCount="indefinite"
+          />
+        </linearGradient>
+      </defs>
+
+      {/* hit area */}
       <path d={d} fill="none" stroke="transparent" strokeWidth={20} />
+      {/* base edge */}
       <path
         d={d}
         fill="none"
@@ -75,6 +81,15 @@ export default function SmartEdge({
         strokeLinecap="round"
         strokeLinejoin="round"
         markerEnd={markerEnd}
+      />
+      {/* gradient shine overlay */}
+      <path
+        d={d}
+        fill="none"
+        stroke={`url(#${gradId})`}
+        strokeWidth={style.strokeWidth ?? 4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </>
   );
