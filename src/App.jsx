@@ -194,6 +194,10 @@ export default function App() {
           </div>
         </div>
 
+        <div className="topbar__center">
+          <FocusBar />
+        </div>
+
         <div className="topbar__actions">
           <button className="topbar__btn" onClick={autoLayout} title="Auto-layout graph">
             ⊞ Sort
@@ -241,8 +245,6 @@ export default function App() {
       {/* Sidebar */}
       <NodeSidebar />
 
-      {/* Focus bar */}
-      <FocusBar />
     </div>
   );
 }

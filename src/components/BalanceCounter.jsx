@@ -24,8 +24,7 @@ export default function BalanceCounter() {
   };
 
   return (
-    <div className="balance" onClick={!editing ? handleClick : undefined} title="Click to edit balance">
-      <span className="balance__label">Balance</span>
+    <div className={`balance${editing ? ' balance--editing' : ''}`} onClick={!editing ? handleClick : undefined} title="Click to edit balance">
       {editing ? (
         <input
           className="balance__input"
