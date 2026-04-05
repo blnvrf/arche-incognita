@@ -136,6 +136,23 @@ export const useStore = create((set, get) => ({
     saveToStorage(get().nodes, edges, get().balance);
   },
 
+  addEdgeBetween: (sourceId, targetId) => {
+    const { edges } = get();
+    if (edges.some((e) => e.source === sourceId && e.target === targetId)) return;
+    const newEdges = [
+      ...edges,
+      { id: `e-${sourceId}-${targetId}-${Date.now()}`, source: sourceId, target: targetId, type: 'smart' },
+    ];
+    set({ edges: newEdges });
+    saveToStorage(get().nodes, newEdges, get().balance);
+  },
+
+  removeEdge: (edgeId) => {
+    const edges = get().edges.filter((e) => e.id !== edgeId);
+    set({ edges });
+    saveToStorage(get().nodes, edges, get().balance);
+  },
+
   setBalance: (balance) => {
     set({ balance });
     saveToStorage(get().nodes, get().edges, balance);

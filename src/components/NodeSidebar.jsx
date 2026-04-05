@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Trash2, Check } from 'lucide-react';
+import { X, Trash2, Check, Plus } from 'lucide-react';
 import { useStore } from '../store';
 import './NodeSidebar.css';
 
@@ -16,7 +16,7 @@ const DEFAULT_FORM = {
 };
 
 export default function NodeSidebar() {
-  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, nodes, edges } = useStore();
+  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, addEdgeBetween, removeEdge, nodes, edges } = useStore();
 
   const [form, setForm] = useState(DEFAULT_FORM);
 
@@ -70,9 +70,23 @@ export default function NodeSidebar() {
   const isEditing = sidebarMode === 'edit';
   const nodeStatus = editingNode?.data?.status;
 
-  // Get available nodes for prerequisite info display
-  const prereqIds = edges.filter((e) => e.target === editingNode?.id).map((e) => e.source);
-  const prereqNodes = nodes.filter((n) => prereqIds.includes(n.id));
+  const nodeId = editingNode?.id;
+
+  // Incoming edges (requires)
+  const requiresEdges = edges.filter((e) => e.target === nodeId);
+  const requiresNodes = nodes.filter((n) => requiresEdges.some((e) => e.source === n.id));
+
+  // Outgoing edges (unlocks)
+  const unlocksEdges = edges.filter((e) => e.source === nodeId);
+  const unlocksNodes = nodes.filter((n) => unlocksEdges.some((e) => e.target === n.id));
+
+  // Nodes available to add as requires (exclude self, already requires, and descendants to avoid cycles)
+  const requiresCandidates = nodes.filter(
+    (n) => n.id !== nodeId && !requiresNodes.some((r) => r.id === n.id)
+  );
+  const unlocksCandidates = nodes.filter(
+    (n) => n.id !== nodeId && !unlocksNodes.some((u) => u.id === n.id)
+  );
 
   return (
     <div className="sidebar" style={{ animation: 'slide-in-right 0.2s ease' }}>
@@ -172,22 +186,91 @@ export default function NodeSidebar() {
           />
         </div>
 
-        {/* Prerequisites info (edit mode) */}
-        {isEditing && prereqNodes.length > 0 && (
+        {/* Requires (incoming edges) */}
+        {isEditing && (
           <div className="field">
-            <label className="field__label">Prerequisites</label>
-            <div className="prereq-list">
-              {prereqNodes.map((n) => (
-                <div key={n.id} className={`prereq-item prereq-item--${n.data.status}`}>
-                  <span>{n.data.emoji}</span>
-                  <span>{n.data.title}</span>
-                  <span className="prereq-status">{n.data.status}</span>
-                </div>
-              ))}
+            <label className="field__label">Requires</label>
+            <div className="rel-list">
+              {requiresNodes.map((n) => {
+                const edge = requiresEdges.find((e) => e.source === n.id);
+                return (
+                  <div key={n.id} className={`rel-item rel-item--${n.data.status}`}>
+                    <span className="rel-item__emoji">{n.data.emoji}</span>
+                    <span className="rel-item__title">{n.data.title}</span>
+                    <span className="rel-item__status">{n.data.status}</span>
+                    <button className="rel-item__remove" onClick={() => removeEdge(edge.id)} title="Remove">
+                      <X size={10} />
+                    </button>
+                  </div>
+                );
+              })}
+              {requiresNodes.length === 0 && (
+                <p className="field__hint">No prerequisites.</p>
+              )}
             </div>
-            <p className="field__hint" style={{ marginTop: 6 }}>
-              Connect / disconnect edges directly on the canvas.
-            </p>
+            {requiresCandidates.length > 0 && (
+              <div className="rel-add">
+                <select className="rel-add__select" id="req-select" defaultValue="">
+                  <option value="" disabled>Add prerequisite…</option>
+                  {requiresCandidates.map((n) => (
+                    <option key={n.id} value={n.id}>{n.data.emoji} {n.data.title}</option>
+                  ))}
+                </select>
+                <button
+                  className="rel-add__btn"
+                  onClick={() => {
+                    const sel = document.getElementById('req-select');
+                    if (sel.value) { addEdgeBetween(sel.value, nodeId); sel.value = ''; }
+                  }}
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Unlocks (outgoing edges) */}
+        {isEditing && (
+          <div className="field">
+            <label className="field__label">Unlocks</label>
+            <div className="rel-list">
+              {unlocksNodes.map((n) => {
+                const edge = unlocksEdges.find((e) => e.target === n.id);
+                return (
+                  <div key={n.id} className={`rel-item rel-item--${n.data.status}`}>
+                    <span className="rel-item__emoji">{n.data.emoji}</span>
+                    <span className="rel-item__title">{n.data.title}</span>
+                    <span className="rel-item__status">{n.data.status}</span>
+                    <button className="rel-item__remove" onClick={() => removeEdge(edge.id)} title="Remove">
+                      <X size={10} />
+                    </button>
+                  </div>
+                );
+              })}
+              {unlocksNodes.length === 0 && (
+                <p className="field__hint">Unlocks nothing yet.</p>
+              )}
+            </div>
+            {unlocksCandidates.length > 0 && (
+              <div className="rel-add">
+                <select className="rel-add__select" id="unl-select" defaultValue="">
+                  <option value="" disabled>Add unlock…</option>
+                  {unlocksCandidates.map((n) => (
+                    <option key={n.id} value={n.id}>{n.data.emoji} {n.data.title}</option>
+                  ))}
+                </select>
+                <button
+                  className="rel-add__btn"
+                  onClick={() => {
+                    const sel = document.getElementById('unl-select');
+                    if (sel.value) { addEdgeBetween(nodeId, sel.value); sel.value = ''; }
+                  }}
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

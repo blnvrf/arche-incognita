@@ -126,7 +126,7 @@ function buildD(waypoints, ox, oy) {
 
     // progress 0→1 from source to target; radius grows toward target
     const progress = i / (n - 1);
-    const R = 6 + 22 * progress;    // 6px near source → 28px near target
+    const R = 14 + 46 * progress;   // 14px near source → 60px near target
 
     const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
     const d1 = Math.hypot(x1 - x0, y1 - y0);
@@ -190,7 +190,7 @@ export default function SmartEdge({
   }, [nodes, source, target, sourceX, sourceY, targetX, targetY]);
 
   const stroke      = style.stroke      ?? 'rgba(180,180,180,0.55)';
-  const strokeWidth = style.strokeWidth ?? 3;
+  const strokeWidth = style.strokeWidth ?? 4.5;
 
   const d = result
     ? buildD(result.waypoints, result.ox, result.oy)

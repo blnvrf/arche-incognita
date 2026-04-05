@@ -1,9 +1,10 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
   BackgroundVariant,
   MiniMap,
+  useReactFlow,
 } from '@xyflow/react';
 
 import { useStore } from './store';
@@ -17,10 +18,19 @@ import './App.css';
 const nodeTypes = { taskNode: TaskNode };
 const edgeTypes = { smart: SmartEdge };
 
+// Pushes Zustand edge changes into React Flow's internal state immediately,
+// so sidebar-driven adds/removes appear without a page reload.
+function EdgeSyncer() {
+  const edges = useStore((s) => s.edges);
+  const { setEdges } = useReactFlow();
+  useEffect(() => { setEdges(edges); }, [edges, setEdges]);
+  return null;
+}
+
 export default function App() {
   const {
     nodes, edges,
-    onNodesChange, onEdgesChange, onConnect,
+    onNodesChange,
     openAddSidebar, autoLayout,
     sidebarOpen,
   } = useStore();
@@ -75,11 +85,12 @@ export default function App() {
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={true}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.3}
@@ -87,6 +98,7 @@ export default function App() {
           deleteKeyCode="Delete"
           proOptions={{ hideAttribution: true }}
         >
+          <EdgeSyncer />
           <Background
             variant={BackgroundVariant.Dots}
             gap={28}
