@@ -153,22 +153,26 @@ function MapPanel() {
   );
 }
 
-// Pushes Zustand edge changes into React Flow's internal state immediately,
-// so sidebar-driven adds/removes appear without a page reload.
+// Pushes Zustand edge changes into React Flow's internal state.
+// Kept separate from refreshStatuses so they never race each other.
 function EdgeSyncer() {
   const edges = useStore((s) => s.edges);
-  const refreshStatuses = useStore((s) => s.refreshStatuses);
   const { setEdges } = useReactFlow();
-  useEffect(() => {
-    setEdges(edges);
-    refreshStatuses();
-  }, [edges, setEdges, refreshStatuses]);
+  useEffect(() => { setEdges(edges); }, [edges, setEdges]);
+  return null;
+}
+
+// Re-evaluates locked/available status whenever edges change.
+function StatusRefresher() {
+  const edges = useStore((s) => s.edges);
+  const refreshStatuses = useStore((s) => s.refreshStatuses);
+  useEffect(() => { refreshStatuses(); }, [edges, refreshStatuses]);
   return null;
 }
 
 export default function App() {
   const {
-    nodes, edges,
+    nodes,
     onNodesChange,
     openAddSidebar, autoLayout,
     sidebarOpen,
@@ -202,7 +206,7 @@ export default function App() {
       <div className={`canvas-wrap ${sidebarOpen ? 'canvas-wrap--sidebar' : ''}`}>
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          defaultEdges={[]}
           onNodesChange={onNodesChange}
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
@@ -218,6 +222,7 @@ export default function App() {
           proOptions={{ hideAttribution: true }}
         >
           <EdgeSyncer />
+          <StatusRefresher />
           <Background
             variant={BackgroundVariant.Dots}
             gap={28}

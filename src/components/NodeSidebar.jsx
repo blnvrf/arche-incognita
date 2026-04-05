@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Trash2, Check, Plus } from 'lucide-react';
+import { X, Trash2, Check } from 'lucide-react';
 import { useStore } from '../store';
 import './NodeSidebar.css';
 
@@ -215,21 +215,16 @@ export default function NodeSidebar() {
             </div>
             {nodes.filter((n) => !newPrereqs.includes(n.id)).length > 0 && (
               <div className="rel-add">
-                <select className="rel-add__select" id="new-req-select" defaultValue="">
+                <select
+                  className="rel-add__select"
+                  value=""
+                  onChange={(e) => { if (e.target.value) setNewPrereqs([...newPrereqs, e.target.value]); }}
+                >
                   <option value="" disabled>Add prerequisite…</option>
                   {nodes.filter((n) => !newPrereqs.includes(n.id)).map((n) => (
                     <option key={n.id} value={n.id}>{n.data.title}</option>
                   ))}
                 </select>
-                <button
-                  className="rel-add__btn"
-                  onClick={() => {
-                    const sel = document.getElementById('new-req-select');
-                    if (sel.value) { setNewPrereqs([...newPrereqs, sel.value]); sel.value = ''; }
-                  }}
-                >
-                  <Plus size={12} />
-                </button>
               </div>
             )}
           </div>
@@ -256,21 +251,16 @@ export default function NodeSidebar() {
             </div>
             {nodes.filter((n) => !newUnlocks.includes(n.id)).length > 0 && (
               <div className="rel-add">
-                <select className="rel-add__select" id="new-unl-select" defaultValue="">
+                <select
+                  className="rel-add__select"
+                  value=""
+                  onChange={(e) => { if (e.target.value) setNewUnlocks([...newUnlocks, e.target.value]); }}
+                >
                   <option value="" disabled>Add unlock…</option>
                   {nodes.filter((n) => !newUnlocks.includes(n.id)).map((n) => (
                     <option key={n.id} value={n.id}>{n.data.title}</option>
                   ))}
                 </select>
-                <button
-                  className="rel-add__btn"
-                  onClick={() => {
-                    const sel = document.getElementById('new-unl-select');
-                    if (sel.value) { setNewUnlocks([...newUnlocks, sel.value]); sel.value = ''; }
-                  }}
-                >
-                  <Plus size={12} />
-                </button>
               </div>
             )}
           </div>
@@ -300,21 +290,16 @@ export default function NodeSidebar() {
             </div>
             {requiresCandidates.length > 0 && (
               <div className="rel-add">
-                <select className="rel-add__select" id="req-select" defaultValue="">
+                <select
+                  className="rel-add__select"
+                  value=""
+                  onChange={(e) => { if (e.target.value) { addEdgeBetween(e.target.value, nodeId); } }}
+                >
                   <option value="" disabled>Add prerequisite…</option>
                   {requiresCandidates.map((n) => (
                     <option key={n.id} value={n.id}>{n.data.emoji} {n.data.title}</option>
                   ))}
                 </select>
-                <button
-                  className="rel-add__btn"
-                  onClick={() => {
-                    const sel = document.getElementById('req-select');
-                    if (sel.value) { addEdgeBetween(sel.value, nodeId); sel.value = ''; }
-                  }}
-                >
-                  <Plus size={12} />
-                </button>
               </div>
             )}
           </div>
@@ -344,21 +329,16 @@ export default function NodeSidebar() {
             </div>
             {unlocksCandidates.length > 0 && (
               <div className="rel-add">
-                <select className="rel-add__select" id="unl-select" defaultValue="">
+                <select
+                  className="rel-add__select"
+                  value=""
+                  onChange={(e) => { if (e.target.value) { addEdgeBetween(nodeId, e.target.value); } }}
+                >
                   <option value="" disabled>Add unlock…</option>
                   {unlocksCandidates.map((n) => (
                     <option key={n.id} value={n.id}>{n.data.emoji} {n.data.title}</option>
                   ))}
                 </select>
-                <button
-                  className="rel-add__btn"
-                  onClick={() => {
-                    const sel = document.getElementById('unl-select');
-                    if (sel.value) { addEdgeBetween(nodeId, sel.value); sel.value = ''; }
-                  }}
-                >
-                  <Plus size={12} />
-                </button>
               </div>
             )}
           </div>
