@@ -35,6 +35,8 @@ export default function App() {
     sidebarOpen,
   } = useStore();
 
+  useEffect(() => { autoLayout(); }, []);
+
   const onPaneClick = useCallback(() => {
     // deselect / close nothing needed
   }, []);
