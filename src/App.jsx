@@ -216,11 +216,7 @@ export default function App() {
       {/* Top bar */}
       <div className="topbar">
         <div className="topbar__logo">
-          <span className="topbar__logo-symbol">⬡</span>
-          <div className="topbar__logo-text">
-            <span className="topbar__logo-main">Arche</span>
-            <span className="topbar__logo-sub">Incognita</span>
-          </div>
+          <span className="topbar__logo-name">Arche<em>Incognita</em></span>
         </div>
 
         <div className="topbar__center">
