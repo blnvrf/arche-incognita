@@ -185,14 +185,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 6px rgba(100,100,100,0.10), 0 4px 14px rgba(0,0,0,0.4);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.75),
+    inset 0 0 0 1px rgba(0,0,0,0.4),
+    0 0 6px rgba(100,100,100,0.10),
+    0 4px 14px rgba(0,0,0,0.4);
   animation: border-orbit 13s linear infinite;
   transition: color 0.15s, transform 0.12s;
 }
 .fab-btn:hover {
   color: #c8c8c8;
   transform: translateY(-1px);
-  box-shadow: 0 0 10px rgba(150,150,150,0.18), 0 4px 18px rgba(0,0,0,0.5);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.75),
+    inset 0 0 0 1px rgba(0,0,0,0.35),
+    0 0 10px rgba(150,150,150,0.18),
+    0 4px 18px rgba(0,0,0,0.5);
 }
 .fab-btn:active { transform: scale(0.97); }
 
@@ -227,14 +235,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 6px rgba(255,200,0,0.08), 0 4px 14px rgba(0,0,0,0.45);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.8),
+    inset 0 0 0 1px rgba(0,0,0,0.4),
+    0 0 6px rgba(255,200,0,0.08),
+    0 4px 14px rgba(0,0,0,0.45);
   animation: add-btn-orbit 7s linear infinite, add-btn-glow 5s ease-in-out infinite, plus-shine 7s ease-in-out infinite;
   transition: transform 0.15s;
 }
 
 
 .add-btn:hover {
-  box-shadow: 0 0 12px rgba(255,200,0,0.18), 0 4px 18px rgba(0,0,0,0.55);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.8),
+    inset 0 0 0 1px rgba(0,0,0,0.35),
+    0 0 12px rgba(255,200,0,0.18),
+    0 4px 18px rgba(0,0,0,0.55);
   transform: scale(1.06);
 }
 

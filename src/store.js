@@ -12,7 +12,7 @@ const sampleNodes = [
     data: {
       title: 'Complete Logo for Nexus Studio',
       status: 'completed',
-      icon: 'Palette',
+      icon: 'BriefcaseBusiness',
       timeEst: '6h',
       cost: 0,
       moneyDelta: 400,
@@ -27,7 +27,7 @@ const sampleNodes = [
     data: {
       title: 'Buy Microphone',
       status: 'available',
-      icon: 'Mic',
+      icon: 'Dumbbell',
       timeEst: '1h',
       cost: 150,
       moneyDelta: -150,
@@ -42,7 +42,7 @@ const sampleNodes = [
     data: {
       title: 'Post 1st YouTube Video',
       status: 'locked',
-      icon: 'Video',
+      icon: 'Target',
       timeEst: '8h',
       cost: 0,
       moneyDelta: 0,
@@ -57,7 +57,7 @@ const sampleNodes = [
     data: {
       title: 'Build Client Brand Book',
       status: 'available',
-      icon: 'Pencil',
+      icon: 'ScrollText',
       timeEst: '12h',
       cost: 0,
       moneyDelta: 800,
@@ -72,7 +72,7 @@ const sampleNodes = [
     data: {
       title: 'Reach 100 YouTube Subscribers',
       status: 'locked',
-      icon: 'Trophy',
+      icon: 'Sword',
       timeEst: '3mo',
       cost: 0,
       moneyDelta: 0,
