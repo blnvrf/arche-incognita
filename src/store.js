@@ -21,21 +21,31 @@ const ARCHE_NODE = {
   },
 };
 
-// Adds arche→node edges for every non-arche node that has no other prerequisites.
+// Adds arche→node edges for every non-arche, non-incognita node that has no other prerequisites.
 // Removes arche edges from nodes that have gained real prerequisites.
+// Incognita nodes are fully excluded — they float with no edges.
 function ensureArcheEdges(nodes, edges) {
-  const nonArche = nodes.filter((n) => n.id !== 'arche');
-  // Real (non-arche) prereqs per node
+  // Incognita nodes can have prereqs (incoming edges) but never unlock others (no outgoing).
+  // Drop any outgoing edges FROM incognita nodes.
+  let result = edges.filter(
+    (e) => !nodes.find((n) => n.id === e.source && n.data?.isIncognita)
+  );
+
+  // All non-arche nodes are eligible for arche edges when they have no other prereqs.
+  const eligible = nodes.filter((n) => n.id !== 'arche');
+  const eligibleIds = new Set(eligible.map((n) => n.id));
+
+  // Real (non-arche) prereqs
   const realPrereqs = new Set(
-    edges.filter((e) => e.source !== 'arche').map((e) => e.target)
+    result.filter((e) => e.source !== 'arche' && eligibleIds.has(e.target)).map((e) => e.target)
   );
   // Drop stale arche edges for nodes that now have real prereqs
-  let result = edges.filter(
+  result = result.filter(
     (e) => !(e.source === 'arche' && realPrereqs.has(e.target))
   );
   // Add arche edges for nodes with no prereqs at all
   const hasAnyPrereq = new Set(result.map((e) => e.target));
-  for (const n of nonArche) {
+  for (const n of eligible) {
     if (!hasAnyPrereq.has(n.id)) {
       result.push({ id: `e-arche-${n.id}`, source: 'arche', target: n.id, type: 'smart' });
     }
@@ -110,7 +120,9 @@ const _saved = loadFromStorage();
 const saved = _saved
   ? (() => {
       const edges = ensureArcheEdges(_saved.nodes ?? [], _saved.edges ?? []);
-      return { ..._saved, edges, nodes: recomputeStatuses(_saved.nodes ?? [], edges, _saved.balance ?? 0) };
+      const nodes = recomputeStatuses(_saved.nodes ?? [], edges, _saved.balance ?? 0);
+      const activeNodeId = nodes.find((n) => n.data.status === 'active')?.id ?? null;
+      return { ..._saved, edges, nodes, activeNodeId };
     })()
   : null;
 
@@ -118,7 +130,7 @@ export const useStore = create((set, get) => ({
   nodes: saved?.nodes ?? initialNodes,
   edges: saved?.edges ?? initialEdges,
   balance: saved?.balance ?? 0,
-  activeNodeId: null,
+  activeNodeId: saved?.activeNodeId ?? null,
   sidebarOpen: false,
   sidebarMode: 'add', // 'add' | 'edit'
   editingNode: null,
@@ -177,19 +189,28 @@ export const useStore = create((set, get) => ({
   closeSidebar: () => set({ sidebarOpen: false, editingNode: null }),
 
   setActiveNode: (id) => {
-    const { nodes } = get();
+    const { nodes, edges, balance } = get();
+    // Only activate if the node exists and is available
+    const target = nodes.find((n) => n.id === id);
+    if (!target || target.data.status !== 'available') return;
     const updated = nodes.map((n) => {
-      if (n.id === id && n.data.status === 'available') {
-        return { ...n, data: { ...n.data, status: 'active' } };
-      }
-      // Revert every other active node back to available
-      if (n.id !== id && n.data.status === 'active') {
-        return { ...n, data: { ...n.data, status: 'available' } };
-      }
+      if (n.id === id) return { ...n, data: { ...n.data, status: 'active' } };
+      if (n.data.status === 'active') return { ...n, data: { ...n.data, status: 'available' } };
       return n;
     });
     set({ nodes: updated, activeNodeId: id });
-    saveToStorage(updated, get().edges, get().balance);
+    saveToStorage(updated, edges, balance);
+  },
+
+  abandonNode: (id) => {
+    const { nodes, edges, balance } = get();
+    const updated = nodes.map((n) =>
+      n.id === id && n.data.status === 'active'
+        ? { ...n, data: { ...n.data, status: 'available' } }
+        : n
+    );
+    set({ nodes: updated, activeNodeId: null });
+    saveToStorage(updated, edges, balance);
   },
 
   uncompleteNode: (id) => {
@@ -236,12 +257,13 @@ export const useStore = create((set, get) => ({
   },
 
   updateNode: (id, nodeData) => {
-    const { edges, balance } = get();
+    const { balance } = get();
     const patched = get().nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, ...nodeData } } : n
     );
+    const edges = ensureArcheEdges(patched, get().edges);
     const nodes = recomputeStatuses(patched, edges, balance);
-    set({ nodes });
+    set({ nodes, edges });
     saveToStorage(nodes, edges, balance);
   },
 
@@ -262,7 +284,8 @@ export const useStore = create((set, get) => ({
     const rawNodes = data.nodes ?? [];
     edges = ensureArcheEdges(rawNodes, edges);
     const nodes = recomputeStatuses(rawNodes, edges, balance);
-    set({ nodes, edges, balance, activeNodeId: null, sidebarOpen: false, editingNode: null });
+    const activeNodeId = nodes.find((n) => n.data.status === 'active')?.id ?? null;
+    set({ nodes, edges, balance, activeNodeId, sidebarOpen: false, editingNode: null });
     saveToStorage(nodes, edges, balance);
   },
 
@@ -272,33 +295,33 @@ export const useStore = create((set, get) => ({
 
     const NODE_W  = 240;
     const NODE_H  = 160;
-    const GRID_W  = 400;  // column pitch  (node width  + horizontal gap)
-    const GRID_H  = 220;  // row pitch      (node height + vertical gap)
+    const GRID_W  = 400;
+    const GRID_H  = 220;
+
+    // Separate incognita nodes — they get their own final column
+    const regularNodes   = nodes.filter((n) => !n.data?.isIncognita);
+    const incognitaNodes = nodes.filter((n) => n.data?.isIncognita);
+    const regularIds     = new Set(regularNodes.map((n) => n.id));
+    const regularEdges   = edges.filter((e) => regularIds.has(e.source) && regularIds.has(e.target));
 
     const graph = {
       id: 'root',
       layoutOptions: {
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        // Match ELK spacing to grid so its ordering matches our final positions
         'elk.layered.spacing.nodeNodeBetweenLayers': String(GRID_W - NODE_W),
         'elk.spacing.nodeNode': String(GRID_H - NODE_H),
       },
-      children: nodes.map((n) => ({ id: n.id, width: NODE_W, height: NODE_H })),
-      edges: edges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
+      children: regularNodes.map((n) => ({ id: n.id, width: NODE_W, height: NODE_H })),
+      edges: regularEdges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
     };
 
     const laid = await elk.layout(graph);
 
-    // ── Snap to grid ─────────────────────────────────────────────────────────
-    // Group nodes into layers by proximity of their ELK x position.
-    // Within each layer keep ELK's vertical ordering, then assign
-    // clean grid coordinates so every row shares an exact Y value.
     const sorted = [...laid.children].sort((a, b) => a.x - b.x);
     const layers = [];
     for (const node of sorted) {
       const last = layers[layers.length - 1];
-      // New layer when x jumps by more than half a node width
       if (!last || node.x - last[0].x > NODE_W / 2) {
         layers.push([node]);
       } else {
@@ -308,10 +331,16 @@ export const useStore = create((set, get) => ({
 
     const posMap = {};
     layers.forEach((layer, col) => {
-      layer.sort((a, b) => a.y - b.y);           // preserve ELK row order
+      layer.sort((a, b) => a.y - b.y);
       layer.forEach((n, row) => {
         posMap[n.id] = { x: col * GRID_W, y: row * GRID_H };
       });
+    });
+
+    // Place incognita nodes in the column after all regular columns
+    const incognitaCol = layers.length;
+    incognitaNodes.forEach((n, row) => {
+      posMap[n.id] = { x: incognitaCol * GRID_W, y: row * GRID_H };
     });
 
     const { balance } = get();

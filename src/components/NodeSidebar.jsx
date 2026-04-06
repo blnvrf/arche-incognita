@@ -1,8 +1,45 @@
-import { useState, useEffect } from 'react';
-import { X, Trash2, Check, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Trash2, Check, RotateCcw, ChevronDown } from 'lucide-react';
 import { useStore } from '../store';
 import { ICON_LIST, ICON_MAP } from '../icons';
 import './NodeSidebar.css';
+
+function IconSelect({ options, placeholder, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div className="icon-select" ref={ref}>
+      <button className="icon-select__trigger" onClick={() => setOpen((o) => !o)}>
+        <span>{placeholder}</span>
+        <ChevronDown size={11} />
+      </button>
+      {open && (
+        <div className="icon-select__dropdown">
+          {options.map((n) => {
+            const IC = ICON_MAP[n.data.icon] ?? ICON_MAP['Target'];
+            return (
+              <button
+                key={n.id}
+                className="icon-select__option"
+                onClick={() => { onSelect(n.id); setOpen(false); }}
+              >
+                <IC size={12} strokeWidth={1.8} />
+                <span>{n.data.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const DEFAULT_FORM = {
   title: '',
@@ -13,6 +50,7 @@ const DEFAULT_FORM = {
   benefits: '',
   notes: '',
   requiresAll: true,
+  isIncognita: false,
 };
 
 export default function NodeSidebar() {
@@ -33,6 +71,7 @@ export default function NodeSidebar() {
         benefits: (editingNode.data.benefits || []).join('\n'),
         notes: editingNode.data.notes || '',
         requiresAll: editingNode.data.requiresAll !== false,
+        isIncognita: editingNode.data.isIncognita === true,
       });
     } else {
       setForm(DEFAULT_FORM);
@@ -54,6 +93,7 @@ export default function NodeSidebar() {
       benefits: form.benefits.split('\n').map((b) => b.trim()).filter(Boolean),
       notes: form.notes.trim(),
       requiresAll: form.requiresAll,
+      isIncognita: form.isIncognita,
     };
     if (sidebarMode === 'add') {
       const newId = addNode(nodeData);
@@ -139,6 +179,21 @@ export default function NodeSidebar() {
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             placeholder="What do you need to do?"
           />
+        </div>
+
+        {/* Incognita toggle */}
+        <div className="field">
+          <label className="field__check field__check--incognita">
+            <input
+              type="checkbox"
+              checked={form.isIncognita}
+              onChange={(e) => setForm({ ...form, isIncognita: e.target.checked })}
+            />
+            Incognita task
+          </label>
+          {form.isIncognita && (
+            <p className="field__hint">This task is self-contained — no prerequisites or unlocks. It will appear in its own final column.</p>
+          )}
         </div>
 
         {/* Time + Cost row */}
@@ -231,23 +286,18 @@ export default function NodeSidebar() {
             </div>
             {nodes.filter((n) => !newPrereqs.includes(n.id)).length > 0 && (
               <div className="rel-add">
-                <select
-                  className="rel-add__select"
-                  value=""
-                  onChange={(e) => { if (e.target.value) setNewPrereqs([...newPrereqs, e.target.value]); }}
-                >
-                  <option value="" disabled>Add prerequisite…</option>
-                  {nodes.filter((n) => !newPrereqs.includes(n.id)).map((n) => (
-                    <option key={n.id} value={n.id}>{n.data.title}</option>
-                  ))}
-                </select>
+                <IconSelect
+                  options={nodes.filter((n) => !newPrereqs.includes(n.id))}
+                  placeholder="Add prerequisite…"
+                  onSelect={(id) => setNewPrereqs([...newPrereqs, id])}
+                />
               </div>
             )}
           </div>
         )}
 
         {/* Unlocks — add mode */}
-        {!isEditing && (
+        {!isEditing && !form.isIncognita && (
           <div className="field">
             <label className="field__label">Unlocks</label>
             <div className="rel-list">
@@ -267,16 +317,11 @@ export default function NodeSidebar() {
             </div>
             {nodes.filter((n) => !newUnlocks.includes(n.id)).length > 0 && (
               <div className="rel-add">
-                <select
-                  className="rel-add__select"
-                  value=""
-                  onChange={(e) => { if (e.target.value) setNewUnlocks([...newUnlocks, e.target.value]); }}
-                >
-                  <option value="" disabled>Add unlock…</option>
-                  {nodes.filter((n) => !newUnlocks.includes(n.id)).map((n) => (
-                    <option key={n.id} value={n.id}>{n.data.title}</option>
-                  ))}
-                </select>
+                <IconSelect
+                  options={nodes.filter((n) => !newUnlocks.includes(n.id))}
+                  placeholder="Add unlock…"
+                  onSelect={(id) => setNewUnlocks([...newUnlocks, id])}
+                />
               </div>
             )}
           </div>
@@ -316,23 +361,18 @@ export default function NodeSidebar() {
             </div>
             {requiresCandidates.length > 0 && (
               <div className="rel-add">
-                <select
-                  className="rel-add__select"
-                  value=""
-                  onChange={(e) => { if (e.target.value) { addEdgeBetween(e.target.value, nodeId); } }}
-                >
-                  <option value="" disabled>Add prerequisite…</option>
-                  {requiresCandidates.map((n) => (
-                    <option key={n.id} value={n.id}>{n.data.emoji} {n.data.title}</option>
-                  ))}
-                </select>
+                <IconSelect
+                  options={requiresCandidates}
+                  placeholder="Add prerequisite…"
+                  onSelect={(id) => addEdgeBetween(id, nodeId)}
+                />
               </div>
             )}
           </div>
         )}
 
         {/* Unlocks (outgoing edges) */}
-        {isEditing && (
+        {isEditing && !form.isIncognita && (
           <div className="field">
             <label className="field__label">Unlocks</label>
             <div className="rel-list">
@@ -355,16 +395,11 @@ export default function NodeSidebar() {
             </div>
             {unlocksCandidates.length > 0 && (
               <div className="rel-add">
-                <select
-                  className="rel-add__select"
-                  value=""
-                  onChange={(e) => { if (e.target.value) { addEdgeBetween(nodeId, e.target.value); } }}
-                >
-                  <option value="" disabled>Add unlock…</option>
-                  {unlocksCandidates.map((n) => (
-                    <option key={n.id} value={n.id}>{n.data.emoji} {n.data.title}</option>
-                  ))}
-                </select>
+                <IconSelect
+                  options={unlocksCandidates}
+                  placeholder="Add unlock…"
+                  onSelect={(id) => addEdgeBetween(nodeId, id)}
+                />
               </div>
             )}
           </div>

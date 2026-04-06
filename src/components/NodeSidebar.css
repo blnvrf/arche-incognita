@@ -100,6 +100,15 @@
   cursor: pointer;
 }
 
+.field__check--incognita {
+  color: #3ddc84;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.field__check--incognita input[type="checkbox"] {
+  accent-color: #3ddc84;
+}
+
 .field__hint {
   font-family: var(--font-body);
   font-size: 10px;
@@ -252,6 +261,62 @@
   cursor: pointer;
 }
 .rel-add__select:focus { border-color: rgba(196, 168, 74, 0.4); }
+
+/* ── Custom icon dropdown ── */
+.icon-select {
+  position: relative;
+  flex: 1;
+}
+
+.icon-select__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.icon-select__trigger:hover { border-color: rgba(196,168,74,0.3); color: var(--text-primary); }
+
+.icon-select__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 200;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.icon-select__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.icon-select__option:hover { background: rgba(255,255,255,0.05); }
+.icon-select__option svg { flex-shrink: 0; color: var(--text-secondary); }
 
 .rel-add__btn {
   background: rgba(196, 168, 74, 0.12);

@@ -3,22 +3,11 @@ import { useStore } from '../store';
 import './FocusBar.css';
 
 export default function FocusBar() {
-  const { activeNodeId, nodes, completeNode, setActiveNode } = useStore();
+  const { nodes, completeNode, abandonNode } = useStore();
 
-  const activeNode = nodes.find((n) => n.id === activeNodeId && n.data.status === 'active');
+  // Find active node purely by status — never relies on activeNodeId staying in sync
+  const activeNode = nodes.find((n) => n.data.status === 'active');
   if (!activeNode) return null;
-
-  const handleAbandon = () => {
-    // revert to available
-    setActiveNode(null);
-    // manually flip back
-    useStore.setState((s) => ({
-      nodes: s.nodes.map((n) =>
-        n.id === activeNodeId ? { ...n, data: { ...n.data, status: 'available' } } : n
-      ),
-      activeNodeId: null,
-    }));
-  };
 
   return (
     <div className="focus-bar-wrap">
@@ -31,10 +20,10 @@ export default function FocusBar() {
       {activeNode.data.timeEst && (
         <span className="focus-bar__time">{activeNode.data.timeEst}</span>
       )}
-      <button className="focus-bar__abandon" onClick={handleAbandon} title="Abandon task">
+      <button className="focus-bar__abandon" onClick={() => abandonNode(activeNode.id)} title="Abandon task">
         <X size={13} />
       </button>
-      <button className="focus-bar__complete" onClick={() => completeNode(activeNodeId)}>
+      <button className="focus-bar__complete" onClick={() => completeNode(activeNode.id)}>
         <Check size={14} />
         Complete
       </button>

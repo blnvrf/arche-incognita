@@ -25,7 +25,7 @@ export default function TaskNode({ id, data, selected }) {
 
   return (
     <div
-      className={`task-node task-node--${data.status} ${data.isArche ? 'task-node--arche' : ''} ${selected ? 'task-node--selected' : ''}`}
+      className={`task-node task-node--${data.status} ${data.isArche ? 'task-node--arche' : ''} ${data.isIncognita ? 'task-node--incognita' : ''} ${selected ? 'task-node--selected' : ''}`}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
