@@ -268,51 +268,78 @@
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  /* Hide the minimap + legend entirely */
+  /* Prevent any horizontal overflow */
+  html, body, #root {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* Topbar: full width, no overflow */
+  .topbar {
+    padding: 0 14px;
+  }
+
+  /* Hide map + legend entirely */
   .react-flow__panel.bottom-left {
     display: none !important;
   }
 
-  /* FocusBar: detach from navbar, sit full-width below it */
+  /* Canvas: always full width — never shrink for sidebar */
+  .canvas-wrap,
+  .canvas-wrap--sidebar {
+    right: 0 !important;
+    left: 0;
+  }
+
+  /* FocusBar: full-width bar below navbar */
   .topbar__center {
     position: fixed;
     top: 56px;
     left: 0;
     right: 0;
     transform: none;
-    padding: 8px 16px;
+    padding: 6px 14px;
     box-sizing: border-box;
     z-index: 49;
+    width: 100%;
   }
 
   .focus-bar-wrap {
     width: 100%;
+    box-sizing: border-box;
   }
 
   .focus-bar {
-    min-width: unset;
-    max-width: unset;
+    min-width: 0;
+    max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+    padding: 5px 10px 5px 10px;
+  }
+
+  .focus-bar__title {
+    font-size: 10px;
   }
 
   /* Tools: bottom left */
   .fab-tools {
     right: unset;
-    left: 20px;
-    bottom: 24px;
-    gap: 8px;
+    left: 14px;
+    bottom: 20px;
+    gap: 7px;
+  }
+
+  /* Shrink tool buttons slightly on mobile */
+  .fab-tools .fab-btn {
+    width: 36px;
+    height: 36px;
   }
 
   /* Add: bottom right */
   .fab-add {
-    right: 20px;
-    bottom: 24px;
-  }
-
-  /* Sidebar: 90% width */
-  .sidebar {
-    width: 90vw;
+    right: 14px;
+    bottom: 20px;
   }
 }
 
