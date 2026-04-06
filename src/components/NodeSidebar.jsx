@@ -376,7 +376,7 @@ export default function NodeSidebar() {
         {isEditing && nodeStatus !== 'completed' && nodeStatus !== 'locked' && (
           <button className="btn btn--complete" onClick={handleComplete}>
             <Check size={14} />
-            Mark Complete
+            Complete
           </button>
         )}
         {isEditing && nodeStatus === 'completed' && (
@@ -386,7 +386,7 @@ export default function NodeSidebar() {
           </button>
         )}
         <button className="btn btn--primary" onClick={handleSubmit}>
-          {isEditing ? 'Save Changes' : 'Add Task'}
+          {isEditing ? 'Save' : 'Add Task'}
         </button>
 {isEditing && (
           <button className="btn btn--danger" onClick={handleDelete}>

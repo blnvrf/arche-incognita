@@ -19,34 +19,8 @@
   justify-content: space-between;
   padding: 0 20px;
   z-index: 50;
-  background: linear-gradient(180deg, rgba(6,8,20,0.98) 0%, rgba(8,11,25,0.92) 100%);
+  background: transparent;
   overflow: hidden;
-}
-
-/* Animated gold bottom border */
-@keyframes border-gold-slide {
-  0%   { transform: translateX(-33%); }
-  100% { transform: translateX(67%);  }
-}
-
-.topbar::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: -100%;
-  width: 300%;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    transparent 46%,
-    rgba(180,135,0,0.2) 48%,
-    rgba(220,175,0,0.62) 50%,
-    rgba(180,135,0,0.2) 52%,
-    transparent 54%,
-    transparent 100%
-  );
-  animation: border-gold-slide 22s linear infinite;
-  pointer-events: none;
 }
 
 .topbar__logo {
@@ -67,7 +41,7 @@
 
 .topbar__logo-name em {
   font-style: italic;
-  color: var(--accent-gold);
+  color: #d4a060;
 }
 
 .topbar__center {
@@ -221,6 +195,13 @@
   box-shadow: 0 0 10px rgba(150,150,150,0.18), 0 4px 18px rgba(0,0,0,0.5);
 }
 .fab-btn:active { transform: scale(0.97); }
+
+.fab-btn--info {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 18px;
+  letter-spacing: 0;
+}
 
 .add-btn {
   width: 52px;

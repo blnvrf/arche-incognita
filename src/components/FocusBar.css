@@ -27,7 +27,7 @@
   align-items: center;
   gap: 10px;
   border-radius: 4.5px;
-  padding: 5px 12px;
+  padding: 5px 5px 5px 12px;
   min-width: 480px;
   max-width: 680px;
   overflow: hidden;

@@ -52,6 +52,12 @@ export default function SmartEdge({
 
   const gradId = `edge-shine-${source}-${target}`;
 
+  // Anchor dash phase from the target end so overlapping edges on shared
+  // segments always have identical dash patterns on those segments.
+  const DASH_CYCLE = 20; // 8 dash + 12 gap
+  const approxLen = Math.abs(targetX - sourceX) + Math.abs(targetY - sourceY);
+  const dashOffset = approxLen % DASH_CYCLE;
+
   return (
     <>
       <defs>
@@ -84,6 +90,7 @@ export default function SmartEdge({
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={dashed ? '8 12' : undefined}
+        strokeDashoffset={dashed ? dashOffset : undefined}
         markerEnd={markerEnd}
       />
       {/* gradient shine overlay */}
@@ -95,6 +102,7 @@ export default function SmartEdge({
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={dashed ? '8 12' : undefined}
+        strokeDashoffset={dashed ? dashOffset : undefined}
       />
     </>
   );

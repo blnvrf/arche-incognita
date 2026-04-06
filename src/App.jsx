@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -16,6 +16,7 @@ import NodeSidebar from './components/NodeSidebar';
 import FocusBar from './components/FocusBar';
 import BalanceCounter from './components/BalanceCounter';
 import { Save, FolderOpen, RefreshCw } from 'lucide-react';
+import InfoModal from './components/InfoModal';
 import worldMap from './assets/old world map.png';
 import './App.css';
 
@@ -181,6 +182,7 @@ export default function App() {
   } = useStore();
 
   const fileInputRef = useRef(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => { autoLayout(); }, []);
 
@@ -212,7 +214,7 @@ export default function App() {
   };
 
   return (
-    <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.55),rgba(9,11,15,0.55)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat', backgroundOrigin: 'content-box', paddingTop: '56px' }}>
+    <div className="app" style={{ backgroundImage: `linear-gradient(rgba(9,11,15,0.55),rgba(9,11,15,0.55)),url(${worldMap})`, backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat' }}>
       {/* Top bar */}
       <div className="topbar">
         <div className="topbar__logo">
@@ -259,8 +261,11 @@ export default function App() {
         </ReactFlow>
       </div>
 
-      {/* FAB cluster — Refresh / Export / Import / Add */}
+      {infoOpen && <InfoModal onClose={() => setInfoOpen(false)} />}
+
+      {/* FAB cluster — Info / Refresh / Export / Import / Add */}
       <div className="fab-cluster">
+        <button className="fab-btn fab-btn--info" onClick={() => setInfoOpen(true)} title="How to use">i</button>
         <button className="fab-btn" onClick={() => { autoLayout(); }} title="Sort & recalculate"><RefreshCw size={18} strokeWidth={1.8} /></button>
         <button className="fab-btn" onClick={handleExport} title="Export graph"><Save size={18} strokeWidth={1.8} /></button>
         <button className="fab-btn" onClick={() => fileInputRef.current?.click()} title="Import graph"><FolderOpen size={18} strokeWidth={1.8} /></button>

@@ -119,6 +119,8 @@
   outline: none;
   transition: border-color 0.15s;
   resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .field__input:focus,
@@ -129,6 +131,17 @@
 .field__input::placeholder,
 .field__textarea::placeholder {
   color: var(--text-muted);
+}
+
+/* Hide number input spinners */
+.field__input[type="number"]::-webkit-inner-spin-button,
+.field__input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.field__input[type="number"] {
+  -moz-appearance: textfield;
+  width: 100%;
 }
 
 /* ── Icon grid ── */
@@ -182,7 +195,7 @@
 }
 
 .rel-item--completed { border-color: rgba(107, 107, 45, 0.4); }
-.rel-item--available { border-color: rgba(45, 107, 45, 0.4); }
+.rel-item--available { border-color: rgba(192, 112, 40, 0.4); }
 .rel-item--active    { border-color: rgba(45, 107, 170, 0.4); }
 
 .rel-item__emoji { font-size: 13px; flex-shrink: 0; }
@@ -289,10 +302,14 @@
 }
 
 .btn--complete {
-  background: var(--status-available);
-  color: var(--status-available-text);
-  border: 1px solid var(--status-available-border);
+  background: rgba(192,112,40,0.12);
+  color: #d4a060;
+  border: 1px solid #c07028;
   flex: 1;
+}
+.btn--complete:hover {
+  box-shadow: 0 0 10px rgba(192,112,40,0.35);
+  opacity: 0.85;
 }
 
 .btn--sort {
