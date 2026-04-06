@@ -263,13 +263,12 @@ export default function App() {
 
       {infoOpen && <InfoModal onClose={() => setInfoOpen(false)} />}
 
-      {/* FAB cluster — Info / Refresh / Export / Import / Add */}
-      <div className="fab-cluster">
+      {/* FAB tools — Info / Refresh / Export / Import */}
+      <div className="fab-tools">
         <button className="fab-btn fab-btn--info" onClick={() => setInfoOpen(true)} title="How to use">i</button>
         <button className="fab-btn" onClick={() => { autoLayout(); }} title="Sort & recalculate"><RefreshCw size={18} strokeWidth={1.8} /></button>
         <button className="fab-btn" onClick={handleExport} title="Export graph"><Save size={18} strokeWidth={1.8} /></button>
         <button className="fab-btn" onClick={() => fileInputRef.current?.click()} title="Import graph"><FolderOpen size={18} strokeWidth={1.8} /></button>
-        <button className="add-btn" onClick={openAddSidebar} title="Add new task">+</button>
         <input
           ref={fileInputRef}
           type="file"
@@ -277,6 +276,11 @@ export default function App() {
           style={{ display: 'none' }}
           onChange={handleImportFile}
         />
+      </div>
+
+      {/* FAB add */}
+      <div className="fab-add">
+        <button className="add-btn" onClick={openAddSidebar} title="Add new task">+</button>
       </div>
 
       {/* Sidebar */}

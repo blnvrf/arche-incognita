@@ -69,7 +69,7 @@ function saveToStorage(nodes, edges, balance) {
 // A node is available when all its prerequisite tasks are completed (requiresAll=true)
 // or at least one is completed (requiresAll=false). No prereqs → always available.
 // Enforces single-active: if multiple active nodes exist, keeps the first and reverts the rest.
-function recomputeStatuses(nodes, edges) {
+function recomputeStatuses(nodes, edges, balance = 0) {
   // Ensure arche node is always present and always completed
   const hasArche = nodes.some((n) => n.id === 'arche');
   const baseNodes = hasArche ? nodes : [ARCHE_NODE, ...nodes];
@@ -91,16 +91,17 @@ function recomputeStatuses(nodes, edges) {
   });
 
   return sanitized.map((n) => {
-    if (n.data.status === 'active' || n.data.status === 'completed') return n;
+    if (n.id === 'arche' || n.data.status === 'active' || n.data.status === 'completed') return n;
 
     const prereqs = edges.filter((e) => e.target === n.id).map((e) => e.source);
-    const satisfied = prereqs.length === 0
+    const prereqsSatisfied = prereqs.length === 0
       ? true
       : (n.data.requiresAll !== false)
         ? prereqs.every((pid) => completedIds.has(pid))
         : prereqs.some((pid) => completedIds.has(pid));
 
-    const next = satisfied ? 'available' : 'locked';
+    const canAfford = !n.data.cost || n.data.cost <= 0 || balance >= n.data.cost;
+    const next = (prereqsSatisfied && canAfford) ? 'available' : 'locked';
     return n.data.status === next ? n : { ...n, data: { ...n.data, status: next } };
   });
 }
@@ -109,7 +110,7 @@ const _saved = loadFromStorage();
 const saved = _saved
   ? (() => {
       const edges = ensureArcheEdges(_saved.nodes ?? [], _saved.edges ?? []);
-      return { ..._saved, edges, nodes: recomputeStatuses(_saved.nodes ?? [], edges) };
+      return { ..._saved, edges, nodes: recomputeStatuses(_saved.nodes ?? [], edges, _saved.balance ?? 0) };
     })()
   : null;
 
@@ -159,14 +160,16 @@ export const useStore = create((set, get) => ({
 
   refreshStatuses: () => {
     const { nodes, edges, balance } = get();
-    const updated = recomputeStatuses(nodes, edges);
+    const updated = recomputeStatuses(nodes, edges, balance);
     set({ nodes: updated });
     saveToStorage(updated, edges, balance);
   },
 
   setBalance: (balance) => {
-    set({ balance });
-    saveToStorage(get().nodes, get().edges, balance);
+    const { nodes, edges } = get();
+    const updated = recomputeStatuses(nodes, edges, balance);
+    set({ balance, nodes: updated });
+    saveToStorage(updated, edges, balance);
   },
 
   openAddSidebar: () => set({ sidebarOpen: true, sidebarMode: 'add', editingNode: null }),
@@ -197,7 +200,7 @@ export const useStore = create((set, get) => ({
     const marked = nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, status: 'available' } } : n
     );
-    const final = recomputeStatuses(marked, edges);
+    const final = recomputeStatuses(marked, edges, newBalance);
     set({ nodes: final, balance: newBalance, activeNodeId: null });
     saveToStorage(final, edges, newBalance);
   },
@@ -210,7 +213,7 @@ export const useStore = create((set, get) => ({
     const marked = nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, status: 'completed' } } : n
     );
-    const final = recomputeStatuses(marked, edges);
+    const final = recomputeStatuses(marked, edges, newBalance);
     set({ nodes: final, balance: newBalance, activeNodeId: null });
     saveToStorage(final, edges, newBalance);
   },
@@ -226,7 +229,7 @@ export const useStore = create((set, get) => ({
     };
     const allNodes = [...nodes, newNode];
     const edges = ensureArcheEdges(allNodes, get().edges);
-    const updated = recomputeStatuses(allNodes, edges);
+    const updated = recomputeStatuses(allNodes, edges, balance);
     set({ nodes: updated, edges });
     saveToStorage(updated, edges, balance);
     return id;
@@ -237,7 +240,7 @@ export const useStore = create((set, get) => ({
     const patched = get().nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, ...nodeData } } : n
     );
-    const nodes = recomputeStatuses(patched, edges);
+    const nodes = recomputeStatuses(patched, edges, balance);
     set({ nodes });
     saveToStorage(nodes, edges, balance);
   },
@@ -248,7 +251,7 @@ export const useStore = create((set, get) => ({
     const remainingNodes = get().nodes.filter((n) => n.id !== id);
     let edges = get().edges.filter((e) => e.source !== id && e.target !== id);
     edges = ensureArcheEdges(remainingNodes, edges);
-    const nodes = recomputeStatuses(remainingNodes, edges);
+    const nodes = recomputeStatuses(remainingNodes, edges, balance);
     set({ nodes, edges, activeNodeId: get().activeNodeId === id ? null : get().activeNodeId });
     saveToStorage(nodes, edges, balance);
   },
@@ -258,7 +261,7 @@ export const useStore = create((set, get) => ({
     const balance = data.balance ?? 0;
     const rawNodes = data.nodes ?? [];
     edges = ensureArcheEdges(rawNodes, edges);
-    const nodes = recomputeStatuses(rawNodes, edges);
+    const nodes = recomputeStatuses(rawNodes, edges, balance);
     set({ nodes, edges, balance, activeNodeId: null, sidebarOpen: false, editingNode: null });
     saveToStorage(nodes, edges, balance);
   },
@@ -316,7 +319,7 @@ export const useStore = create((set, get) => ({
       ...n,
       position: posMap[n.id] ?? n.position,
     }));
-    const updated = recomputeStatuses(positioned, edges);
+    const updated = recomputeStatuses(positioned, edges, balance);
 
     set({ nodes: updated });
     saveToStorage(updated, edges, balance);

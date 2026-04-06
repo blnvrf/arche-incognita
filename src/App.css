@@ -150,14 +150,22 @@
   50%       { color: #fff4a8; text-shadow: 0 0 14px rgba(255,244,160,0.8), 0 0 4px rgba(255,215,0,1); }
 }
 
-/* ── FAB cluster ── */
-.fab-cluster {
+/* ── FAB tools (small buttons) ── */
+.fab-tools {
   position: fixed;
   bottom: 28px;
-  right: 28px;
+  right: 90px; /* sits left of the add button */
   display: flex;
   align-items: center;
   gap: 10px;
+  z-index: 80;
+}
+
+/* ── FAB add (+ button) ── */
+.fab-add {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
   z-index: 80;
 }
 
@@ -260,30 +268,51 @@
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  /* Reposition panel to bottom-center */
+  /* Hide the minimap + legend entirely */
   .react-flow__panel.bottom-left {
-    left: 50% !important;
-    bottom: 16px !important;
-    transform: translateX(-50%) !important;
+    display: none !important;
   }
 
-  /* Hide the minimap, keep only the legend */
-  .map-panel__map {
-    display: none;
-  }
-
-  /* Remove panel chrome — legend floats cleanly */
-  .map-panel {
-    background: rgba(9,11,15,0.72);
-    width: auto;
-    border-radius: 5px;
-  }
-
-  .map-panel__legend {
-    border-top: none;
-    justify-content: center;
-    gap: 14px;
+  /* FocusBar: detach from navbar, sit full-width below it */
+  .topbar__center {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    transform: none;
     padding: 8px 16px;
+    box-sizing: border-box;
+    z-index: 49;
+  }
+
+  .focus-bar-wrap {
+    width: 100%;
+  }
+
+  .focus-bar {
+    min-width: unset;
+    max-width: unset;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Tools: bottom left */
+  .fab-tools {
+    right: unset;
+    left: 20px;
+    bottom: 24px;
+    gap: 8px;
+  }
+
+  /* Add: bottom right */
+  .fab-add {
+    right: 20px;
+    bottom: 24px;
+  }
+
+  /* Sidebar: 90% width */
+  .sidebar {
+    width: 90vw;
   }
 }
 
