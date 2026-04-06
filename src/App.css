@@ -281,8 +281,13 @@
   }
 
   /* Hide map + legend entirely */
-  .react-flow__panel.bottom-left {
+  .react-flow__panel.bottom-left,
+  .map-panel,
+  .map-panel__map,
+  .map-panel__legend {
     display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   /* Canvas: always full width — never shrink for sidebar */
