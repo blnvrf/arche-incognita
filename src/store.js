@@ -4,90 +4,47 @@ import ELK from 'elkjs/lib/elk.bundled.js';
 
 const STORAGE_KEY = 'arche-incognita-graph';
 
-const sampleNodes = [
-  {
-    id: '1',
-    type: 'taskNode',
-    position: { x: 60, y: 200 },
-    data: {
-      title: 'Complete Logo for Nexus Studio',
-      status: 'completed',
-      icon: 'BriefcaseBusiness',
-      timeEst: '6h',
-      cost: 0,
-      moneyDelta: 400,
-      benefits: ['Earn $400', 'Portfolio piece', 'Potential referral'],
-      notes: 'Final delivery + invoice sent.',
-    },
+const ARCHE_NODE = {
+  id: 'arche',
+  type: 'taskNode',
+  position: { x: 0, y: 0 },
+  data: {
+    title: 'Arche',
+    status: 'completed',
+    icon: 'Flame',
+    isArche: true,
+    timeEst: '',
+    cost: 0,
+    moneyDelta: 0,
+    benefits: ['Before the map, there was only the horizon.', 'Start your journey now.'],
+    notes: '',
   },
-  {
-    id: '2',
-    type: 'taskNode',
-    position: { x: 60, y: 380 },
-    data: {
-      title: 'Buy Microphone',
-      status: 'available',
-      icon: 'Dumbbell',
-      timeEst: '1h',
-      cost: 150,
-      moneyDelta: -150,
-      benefits: ['Unlock YouTube filming', 'Sound pro in meetings'],
-      notes: 'Shure MV7 or similar.',
-    },
-  },
-  {
-    id: '3',
-    type: 'taskNode',
-    position: { x: 380, y: 300 },
-    data: {
-      title: 'Post 1st YouTube Video',
-      status: 'locked',
-      icon: 'Target',
-      timeEst: '8h',
-      cost: 0,
-      moneyDelta: 0,
-      benefits: ['Channel momentum', 'Unlock sponsorship path', 'Proof of concept'],
-      notes: 'Needs mic + edit setup first.',
-    },
-  },
-  {
-    id: '4',
-    type: 'taskNode',
-    position: { x: 380, y: 100 },
-    data: {
-      title: 'Build Client Brand Book',
-      status: 'available',
-      icon: 'ScrollText',
-      timeEst: '12h',
-      cost: 0,
-      moneyDelta: 800,
-      benefits: ['Earn $800', 'Long-term retainer potential'],
-      notes: 'Ella McMaster / mixmaster project.',
-    },
-  },
-  {
-    id: '5',
-    type: 'taskNode',
-    position: { x: 700, y: 300 },
-    data: {
-      title: 'Reach 100 YouTube Subscribers',
-      status: 'locked',
-      icon: 'Sword',
-      timeEst: '3mo',
-      cost: 0,
-      moneyDelta: 0,
-      benefits: ['Unlock monetization path', 'Social proof', 'Brand deal eligibility'],
-      notes: 'Milestone node — no single action.',
-    },
-  },
-];
+};
 
-const sampleEdges = [
-  { id: 'e1-3', source: '1', target: '3', type: 'smart' },
-  { id: 'e2-3', source: '2', target: '3', type: 'smart' },
-  { id: 'e3-5', source: '3', target: '5', type: 'smart' },
-  { id: 'e4-5', source: '4', target: '5', type: 'smart' },
-];
+// Adds arche→node edges for every non-arche node that has no other prerequisites.
+// Removes arche edges from nodes that have gained real prerequisites.
+function ensureArcheEdges(nodes, edges) {
+  const nonArche = nodes.filter((n) => n.id !== 'arche');
+  // Real (non-arche) prereqs per node
+  const realPrereqs = new Set(
+    edges.filter((e) => e.source !== 'arche').map((e) => e.target)
+  );
+  // Drop stale arche edges for nodes that now have real prereqs
+  let result = edges.filter(
+    (e) => !(e.source === 'arche' && realPrereqs.has(e.target))
+  );
+  // Add arche edges for nodes with no prereqs at all
+  const hasAnyPrereq = new Set(result.map((e) => e.target));
+  for (const n of nonArche) {
+    if (!hasAnyPrereq.has(n.id)) {
+      result.push({ id: `e-arche-${n.id}`, source: 'arche', target: n.id, type: 'smart' });
+    }
+  }
+  return result;
+}
+
+const initialNodes = [ARCHE_NODE];
+const initialEdges = [];
 
 function loadFromStorage() {
   try {
@@ -113,6 +70,14 @@ function saveToStorage(nodes, edges, balance) {
 // or at least one is completed (requiresAll=false). No prereqs → always available.
 // Enforces single-active: if multiple active nodes exist, keeps the first and reverts the rest.
 function recomputeStatuses(nodes, edges) {
+  // Ensure arche node is always present and always completed
+  const hasArche = nodes.some((n) => n.id === 'arche');
+  const baseNodes = hasArche ? nodes : [ARCHE_NODE, ...nodes];
+  const withArche = baseNodes.map((n) =>
+    n.id === 'arche' ? { ...ARCHE_NODE, position: n.position ?? ARCHE_NODE.position } : n
+  );
+  nodes = withArche;
+
   const completedIds = new Set(nodes.filter((n) => n.data.status === 'completed').map((n) => n.id));
 
   // Enforce single-active
@@ -142,12 +107,15 @@ function recomputeStatuses(nodes, edges) {
 
 const _saved = loadFromStorage();
 const saved = _saved
-  ? { ..._saved, nodes: recomputeStatuses(_saved.nodes ?? [], _saved.edges ?? []) }
+  ? (() => {
+      const edges = ensureArcheEdges(_saved.nodes ?? [], _saved.edges ?? []);
+      return { ..._saved, edges, nodes: recomputeStatuses(_saved.nodes ?? [], edges) };
+    })()
   : null;
 
 export const useStore = create((set, get) => ({
-  nodes: saved?.nodes ?? sampleNodes,
-  edges: saved?.edges ?? sampleEdges,
+  nodes: saved?.nodes ?? initialNodes,
+  edges: saved?.edges ?? initialEdges,
   balance: saved?.balance ?? 0,
   activeNodeId: null,
   sidebarOpen: false,
@@ -172,20 +140,21 @@ export const useStore = create((set, get) => ({
   },
 
   addEdgeBetween: (sourceId, targetId) => {
-    const { edges } = get();
+    const { nodes } = get();
+    let edges = get().edges;
     if (edges.some((e) => e.source === sourceId && e.target === targetId)) return;
-    const newEdges = [
-      ...edges,
-      { id: `e-${sourceId}-${targetId}-${Date.now()}`, source: sourceId, target: targetId, type: 'smart' },
-    ];
-    set({ edges: newEdges });
-    saveToStorage(get().nodes, newEdges, get().balance);
+    edges = [...edges, { id: `e-${sourceId}-${targetId}-${Date.now()}`, source: sourceId, target: targetId, type: 'smart' }];
+    edges = ensureArcheEdges(nodes, edges);
+    set({ edges });
+    saveToStorage(nodes, edges, get().balance);
   },
 
   removeEdge: (edgeId) => {
-    const edges = get().edges.filter((e) => e.id !== edgeId);
+    const { nodes } = get();
+    let edges = get().edges.filter((e) => e.id !== edgeId);
+    edges = ensureArcheEdges(nodes, edges);
     set({ edges });
-    saveToStorage(get().nodes, edges, get().balance);
+    saveToStorage(nodes, edges, get().balance);
   },
 
   refreshStatuses: () => {
@@ -247,7 +216,7 @@ export const useStore = create((set, get) => ({
   },
 
   addNode: (nodeData) => {
-    const { nodes, edges, balance } = get();
+    const { nodes, balance } = get();
     const id = `node-${Date.now()}`;
     const newNode = {
       id,
@@ -255,8 +224,10 @@ export const useStore = create((set, get) => ({
       position: { x: 200 + Math.random() * 200, y: 200 + Math.random() * 200 },
       data: { ...nodeData, status: 'available' },
     };
-    const updated = recomputeStatuses([...nodes, newNode], edges);
-    set({ nodes: updated });
+    const allNodes = [...nodes, newNode];
+    const edges = ensureArcheEdges(allNodes, get().edges);
+    const updated = recomputeStatuses(allNodes, edges);
+    set({ nodes: updated, edges });
     saveToStorage(updated, edges, balance);
     return id;
   },
@@ -272,20 +243,22 @@ export const useStore = create((set, get) => ({
   },
 
   deleteNode: (id) => {
+    if (id === 'arche') return; // arche is permanent
     const { balance } = get();
-    const edges = get().edges.filter((e) => e.source !== id && e.target !== id);
-    const nodes = recomputeStatuses(
-      get().nodes.filter((n) => n.id !== id),
-      edges
-    );
+    const remainingNodes = get().nodes.filter((n) => n.id !== id);
+    let edges = get().edges.filter((e) => e.source !== id && e.target !== id);
+    edges = ensureArcheEdges(remainingNodes, edges);
+    const nodes = recomputeStatuses(remainingNodes, edges);
     set({ nodes, edges, activeNodeId: get().activeNodeId === id ? null : get().activeNodeId });
     saveToStorage(nodes, edges, balance);
   },
 
   loadGraph: (data) => {
-    const edges = (data.edges ?? []).map((e) => ({ ...e, type: 'smart' }));
+    let edges = (data.edges ?? []).map((e) => ({ ...e, type: 'smart' }));
     const balance = data.balance ?? 0;
-    const nodes = recomputeStatuses(data.nodes ?? [], edges);
+    const rawNodes = data.nodes ?? [];
+    edges = ensureArcheEdges(rawNodes, edges);
+    const nodes = recomputeStatuses(rawNodes, edges);
     set({ nodes, edges, balance, activeNodeId: null, sidebarOpen: false, editingNode: null });
     saveToStorage(nodes, edges, balance);
   },

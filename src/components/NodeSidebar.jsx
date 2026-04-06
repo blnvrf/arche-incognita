@@ -68,7 +68,7 @@ export default function NodeSidebar() {
   };
 
   const handleDelete = () => {
-    if (editingNode) deleteNode(editingNode.id);
+    if (editingNode && !editingNode.data.isArche) deleteNode(editingNode.id);
     closeSidebar();
   };
 

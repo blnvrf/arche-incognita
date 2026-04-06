@@ -6,7 +6,7 @@
 /* Outer wrapper owns the spinning border */
 .focus-bar-wrap {
   border-radius: 6px;
-  padding: 1.5px;
+  padding: 2.5px;
   background: conic-gradient(from var(--border-angle),
     #5a4400 0%,
     #5a4400 28%,

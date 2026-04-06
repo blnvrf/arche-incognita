@@ -9,6 +9,7 @@ export default function TaskNode({ id, data, selected }) {
 
   const handleClick = (e) => {
     e.stopPropagation();
+    if (data.isArche) return;
     if (data.status === 'available') {
       setActiveNode(id);
     } else if (data.status === 'active' || data.status === 'completed' || data.status === 'locked') {
@@ -18,12 +19,13 @@ export default function TaskNode({ id, data, selected }) {
 
   const handleDoubleClick = (e) => {
     e.stopPropagation();
+    if (data.isArche) return;
     if (node) openEditSidebar(node);
   };
 
   return (
     <div
-      className={`task-node task-node--${data.status} ${selected ? 'task-node--selected' : ''}`}
+      className={`task-node task-node--${data.status} ${data.isArche ? 'task-node--arche' : ''} ${selected ? 'task-node--selected' : ''}`}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >

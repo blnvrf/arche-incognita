@@ -17,7 +17,7 @@
   overflow: hidden;
   box-sizing: border-box;
   border-radius: 12px;
-  border: 2.5px solid transparent;
+  border: 3.5px solid transparent;
   cursor: pointer;
   transition: transform 0.15s ease;
   font-family: var(--font-body);
@@ -106,7 +106,7 @@
 .task-node--active::after {
   content: '';
   position: absolute;
-  inset: 2.5px;
+  inset: 3.5px;
   border-radius: 10px;
   background: radial-gradient(ellipse 70% 120% at center, rgba(70, 145, 255, 0.09) 0%, transparent 65%);
   background-size: 200% 100%;
@@ -213,8 +213,42 @@
   line-height: 1.3;
 }
 .task-node__benefit::before {
-  content: '→ ';
+  content: '+ ';
   color: rgba(220, 215, 205, 0.4);
+}
+
+/* ── Arche node — permanent green origin ── */
+.task-node--arche {
+  background-image:
+    linear-gradient(#0a1410, #0c1a12),
+    conic-gradient(from var(--border-angle),
+      #1a5c30 0%,
+      #1a5c30 28%,
+      #2d8a4e 48%,
+      #4caf70 62%,
+      #7dd49a 68%,
+      #4caf70 74%,
+      #2d8a4e 86%,
+      #1a5c30 100%
+    );
+  background-origin: padding-box, border-box;
+  background-clip:   padding-box, border-box;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.75),
+    inset 0 0 0 1px rgba(0,0,0,0.4),
+    0 0 10px rgba(50,180,80,0.15),
+    0 4px 18px rgba(0,0,0,0.45);
+  cursor: default;
+  animation: border-orbit 11s linear infinite;
+}
+
+.task-node--arche .task-node__title {
+  color: #4caf70;
+  text-decoration: none;
+}
+
+.task-node--arche .task-node__status-label {
+  color: #2d8a4e;
 }
 
 .task-node__status-row {
