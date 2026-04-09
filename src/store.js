@@ -299,8 +299,8 @@ export const useStore = create((set, get) => ({
 
     const NODE_W  = 240;
     const NODE_H  = 160;
-    const GRID_W  = 400;
-    const GRID_H  = 220;
+    const COL_GAP = 160;
+    const ROW_GAP = 60;
 
     // Separate incognita nodes — they get their own final column
     const regularNodes   = nodes.filter((n) => !n.data?.isIncognita);
@@ -313,8 +313,9 @@ export const useStore = create((set, get) => ({
       layoutOptions: {
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(GRID_W - NODE_W),
-        'elk.spacing.nodeNode': String(GRID_H - NODE_H),
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(COL_GAP),
+        'elk.spacing.nodeNode': String(ROW_GAP),
+        'elk.edgeRouting': 'ORTHOGONAL',
       },
       children: regularNodes.map((n) => ({ id: n.id, width: NODE_W, height: NODE_H })),
       edges: regularEdges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
@@ -322,29 +323,25 @@ export const useStore = create((set, get) => ({
 
     const laid = await elk.layout(graph);
 
-    const sorted = [...laid.children].sort((a, b) => a.x - b.x);
-    const layers = [];
-    for (const node of sorted) {
-      const last = layers[layers.length - 1];
-      if (!last || node.x - last[0].x > NODE_W / 2) {
-        layers.push([node]);
-      } else {
-        last.push(node);
-      }
+    // Use ELK's exact positions — no grid-snap — so bend points stay accurate
+    const posMap = {};
+    for (const n of laid.children) {
+      posMap[n.id] = { x: n.x, y: n.y };
     }
 
-    const posMap = {};
-    layers.forEach((layer, col) => {
-      layer.sort((a, b) => a.y - b.y);
-      layer.forEach((n, row) => {
-        posMap[n.id] = { x: col * GRID_W, y: row * GRID_H };
-      });
-    });
+    // Collect bend points from ELK's orthogonal edge routing
+    const routeMap = {};
+    for (const e of (laid.edges ?? [])) {
+      const sec = e.sections?.[0];
+      routeMap[e.id] = sec?.bendPoints ?? [];
+    }
 
-    // Place incognita nodes in the column after all regular columns
-    const incognitaCol = layers.length;
-    incognitaNodes.forEach((n, row) => {
-      posMap[n.id] = { x: incognitaCol * GRID_W, y: row * GRID_H };
+    // Place incognita nodes in a column after all regular nodes
+    const maxX = laid.children.length > 0
+      ? Math.max(...laid.children.map((n) => n.x + NODE_W))
+      : 0;
+    incognitaNodes.forEach((n, i) => {
+      posMap[n.id] = { x: maxX + COL_GAP, y: i * (NODE_H + ROW_GAP) };
     });
 
     const positioned = nodes.map((n) => ({
@@ -353,7 +350,14 @@ export const useStore = create((set, get) => ({
     }));
     const updated = recomputeStatuses(positioned, edges, balance);
 
-    set({ nodes: updated, edges });
-    saveToStorage(updated, edges, balance);
+    // Attach ELK bend points to each edge so SmartEdge can draw obstacle-free paths
+    const routedEdges = edges.map((e) =>
+      e.id in routeMap
+        ? { ...e, data: { ...(e.data ?? {}), elkBends: routeMap[e.id] } }
+        : { ...e, data: { ...(e.data ?? {}), elkBends: null } }
+    );
+
+    set({ nodes: updated, edges: routedEdges });
+    saveToStorage(updated, routedEdges, balance);
   },
 }));
