@@ -299,8 +299,8 @@ export const useStore = create((set, get) => ({
 
     const NODE_W  = 240;
     const NODE_H  = 160;
-    const COL_GAP = 160;
-    const ROW_GAP = 60;
+    const COL_GAP = 160; // gap between columns (GRID_W = NODE_W + COL_GAP = 400)
+    const ROW_GAP = 60;  // gap between rows    (GRID_H = NODE_H + ROW_GAP = 220)
 
     // Separate incognita nodes — they get their own final column
     const regularNodes   = nodes.filter((n) => !n.data?.isIncognita);
@@ -322,17 +322,32 @@ export const useStore = create((set, get) => ({
 
     const laid = await elk.layout(graph);
 
-    const posMap = {};
-    for (const n of laid.children) {
-      posMap[n.id] = { x: n.x, y: n.y };
+    // Assign every node to an integer (col, row) slot based on ELK's x/y ordering,
+    // then place it at exactly col * GRID_W, row * GRID_H so the whole graph is a
+    // perfect grid. SmartEdge's midpoint formula then always lands dead-center in
+    // the gap between columns — like a Civ tech tree.
+    const GRID_W = NODE_W + COL_GAP;
+    const GRID_H = NODE_H + ROW_GAP;
+
+    const sorted = [...laid.children].sort((a, b) => a.x - b.x);
+    const layers = [];
+    for (const node of sorted) {
+      const last = layers[layers.length - 1];
+      if (!last || node.x - last[0].x > NODE_W / 2) layers.push([node]);
+      else last.push(node);
     }
 
-    // Place incognita nodes in a column after all regular nodes
-    const maxX = laid.children.length > 0
-      ? Math.max(...laid.children.map((n) => n.x + NODE_W))
-      : 0;
+    const posMap = {};
+    layers.forEach((layer, col) => {
+      layer.sort((a, b) => a.y - b.y);
+      layer.forEach((n, row) => {
+        posMap[n.id] = { x: col * GRID_W, y: row * GRID_H };
+      });
+    });
+
+    // Incognita nodes go in the column after all regular columns
     incognitaNodes.forEach((n, i) => {
-      posMap[n.id] = { x: maxX + COL_GAP, y: i * (NODE_H + ROW_GAP) };
+      posMap[n.id] = { x: layers.length * GRID_W, y: i * GRID_H };
     });
 
     const positioned = nodes.map((n) => ({
