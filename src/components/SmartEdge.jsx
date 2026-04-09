@@ -1,28 +1,11 @@
 import { useEdges } from '@xyflow/react';
 import { useStore } from '../store';
 
-const R = 24; // corner radius
-
-// General rounded path through an ordered list of points (orthogonal segments).
+// Strict orthogonal path — only horizontal/vertical segments, sharp 90° corners.
 function buildPath(pts) {
   if (pts.length < 2) return '';
-  if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
-
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const prev = pts[i - 1], curr = pts[i], next = pts[i + 1];
-    const dx1 = curr.x - prev.x, dy1 = curr.y - prev.y;
-    const dx2 = next.x - curr.x, dy2 = next.y - curr.y;
-    const l1 = Math.hypot(dx1, dy1);
-    const l2 = Math.hypot(dx2, dy2);
-    if (l1 < 0.01 || l2 < 0.01) { d += ` L ${curr.x} ${curr.y}`; continue; }
-    const r = Math.min(R, l1 / 2, l2 / 2);
-    const bx = curr.x - (dx1 / l1) * r, by = curr.y - (dy1 / l1) * r;
-    const ax = curr.x + (dx2 / l2) * r, ay = curr.y + (dy2 / l2) * r;
-    d += ` L ${bx} ${by} Q ${curr.x} ${curr.y} ${ax} ${ay}`;
-  }
-  d += ` L ${pts[pts.length - 1].x} ${pts[pts.length - 1].y}`;
-  return d;
+  return 'M ' + pts[0].x + ' ' + pts[0].y +
+    pts.slice(1).map((p) => ` L ${p.x} ${p.y}`).join('');
 }
 
 // Fallback simple orthogonal path (used before autoLayout assigns elkBends).
@@ -31,16 +14,7 @@ const JUNCTION_OFFSET = 80;
 function fallbackPath(sx, sy, jx, tx, ty) {
   const dy = ty - sy;
   if (Math.abs(dy) < 1) return `M ${sx} ${sy} L ${tx} ${ty}`;
-  const sign = dy > 0 ? 1 : -1;
-  const r = Math.min(R, Math.abs(dy) / 2, (jx - sx) / 2, (tx - jx) / 2);
-  return [
-    `M ${sx} ${sy}`,
-    `L ${jx - r} ${sy}`,
-    `Q ${jx} ${sy} ${jx} ${sy + sign * r}`,
-    `L ${jx} ${ty - sign * r}`,
-    `Q ${jx} ${ty} ${jx + r} ${ty}`,
-    `L ${tx} ${ty}`,
-  ].join(' ');
+  return `M ${sx} ${sy} L ${jx} ${sy} L ${jx} ${ty} L ${tx} ${ty}`;
 }
 
 export default function SmartEdge({
