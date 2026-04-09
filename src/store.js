@@ -290,7 +290,8 @@ export const useStore = create((set, get) => ({
   },
 
   autoLayout: async () => {
-    const { nodes, edges } = get();
+    const { nodes, balance } = get();
+    let edges = ensureArcheEdges(nodes, get().edges);
     const elk = new ELK();
 
     const NODE_W  = 240;
@@ -343,14 +344,13 @@ export const useStore = create((set, get) => ({
       posMap[n.id] = { x: incognitaCol * GRID_W, y: row * GRID_H };
     });
 
-    const { balance } = get();
     const positioned = nodes.map((n) => ({
       ...n,
       position: posMap[n.id] ?? n.position,
     }));
     const updated = recomputeStatuses(positioned, edges, balance);
 
-    set({ nodes: updated });
+    set({ nodes: updated, edges });
     saveToStorage(updated, edges, balance);
   },
 }));
