@@ -315,7 +315,6 @@ export const useStore = create((set, get) => ({
         'elk.direction': 'RIGHT',
         'elk.layered.spacing.nodeNodeBetweenLayers': String(COL_GAP),
         'elk.spacing.nodeNode': String(ROW_GAP),
-        'elk.edgeRouting': 'ORTHOGONAL',
       },
       children: regularNodes.map((n) => ({ id: n.id, width: NODE_W, height: NODE_H })),
       edges: regularEdges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
@@ -323,17 +322,10 @@ export const useStore = create((set, get) => ({
 
     const laid = await elk.layout(graph);
 
-    // Use ELK's exact positions — no grid-snap — so bend points stay accurate
+    // Use ELK's exact positions (no grid-snap) for accurate layered placement
     const posMap = {};
     for (const n of laid.children) {
       posMap[n.id] = { x: n.x, y: n.y };
-    }
-
-    // Collect bend points from ELK's orthogonal edge routing
-    const routeMap = {};
-    for (const e of (laid.edges ?? [])) {
-      const sec = e.sections?.[0];
-      routeMap[e.id] = sec?.bendPoints ?? [];
     }
 
     // Place incognita nodes in a column after all regular nodes
@@ -350,14 +342,7 @@ export const useStore = create((set, get) => ({
     }));
     const updated = recomputeStatuses(positioned, edges, balance);
 
-    // Attach ELK bend points to each edge so SmartEdge can draw obstacle-free paths
-    const routedEdges = edges.map((e) =>
-      e.id in routeMap
-        ? { ...e, data: { ...(e.data ?? {}), elkBends: routeMap[e.id] } }
-        : { ...e, data: { ...(e.data ?? {}), elkBends: null } }
-    );
-
-    set({ nodes: updated, edges: routedEdges });
-    saveToStorage(updated, routedEdges, balance);
+    set({ nodes: updated, edges });
+    saveToStorage(updated, edges, balance);
   },
 }));
