@@ -25,17 +25,20 @@ const ARCHE_NODE = {
 // Removes arche edges from nodes that have gained real prerequisites.
 // Incognita nodes are fully excluded — they float with no edges.
 function ensureArcheEdges(nodes, edges) {
-  // Incognita nodes can have prereqs (incoming edges) but never unlock others (no outgoing).
-  // Drop any outgoing edges FROM incognita nodes.
-  let result = edges.filter(
-    (e) => !nodes.find((n) => n.id === e.source && n.data?.isIncognita)
-  );
+  const incognitaIds = new Set(nodes.filter((n) => n.data?.isIncognita).map((n) => n.id));
 
-  // All non-arche nodes are eligible for arche edges when they have no other prereqs.
-  const eligible = nodes.filter((n) => n.id !== 'arche');
+  // Drop outgoing edges FROM incognita nodes, AND any arche→incognita edges.
+  let result = edges.filter((e) => {
+    if (incognitaIds.has(e.source)) return false;          // outgoing from incognita
+    if (e.source === 'arche' && incognitaIds.has(e.target)) return false; // arche→incognita
+    return true;
+  });
+
+  // Only non-arche, non-incognita nodes are eligible for arche fallback edges.
+  const eligible = nodes.filter((n) => n.id !== 'arche' && !n.data?.isIncognita);
   const eligibleIds = new Set(eligible.map((n) => n.id));
 
-  // Real (non-arche) prereqs
+  // Real (non-arche) prereqs among eligible nodes
   const realPrereqs = new Set(
     result.filter((e) => e.source !== 'arche' && eligibleIds.has(e.target)).map((e) => e.target)
   );
@@ -43,7 +46,7 @@ function ensureArcheEdges(nodes, edges) {
   result = result.filter(
     (e) => !(e.source === 'arche' && realPrereqs.has(e.target))
   );
-  // Add arche edges for nodes with no prereqs at all
+  // Add arche edges for eligible nodes with no prereqs at all
   const hasAnyPrereq = new Set(result.map((e) => e.target));
   for (const n of eligible) {
     if (!hasAnyPrereq.has(n.id)) {
