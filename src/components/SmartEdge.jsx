@@ -1,5 +1,4 @@
 import { useEdges } from '@xyflow/react';
-import { useMemo } from 'react';
 import { useStore } from '../store';
 
 const JUNCTION_OFFSET = 80; // px from node where the vertical stem sits
@@ -38,17 +37,15 @@ export default function SmartEdge({
   const targetNode = useStore((s) => s.nodes.find((n) => n.id === target));
   const dashed = targetNode?.data?.requiresAll === false;
 
-  const d = useMemo(() => {
-    const multiOut = edges.filter((e) => e.source === source).length > 1;
-    const multiIn  = edges.filter((e) => e.target === target).length > 1;
+  const multiOut = edges.filter((e) => e.source === source).length > 1;
+  const multiIn  = edges.filter((e) => e.target === target).length > 1;
 
-    let jx;
-    if (multiOut)     jx = sourceX + JUNCTION_OFFSET;
-    else if (multiIn) jx = targetX - JUNCTION_OFFSET;
-    else              jx = (sourceX + targetX) / 2;
+  let jx;
+  if (multiOut)     jx = sourceX + JUNCTION_OFFSET;
+  else if (multiIn) jx = targetX - JUNCTION_OFFSET;
+  else              jx = (sourceX + targetX) / 2;
 
-    return orthoPath(sourceX, sourceY, jx, targetX, targetY);
-  }, [edges, source, target, sourceX, sourceY, targetX, targetY]);
+  const d = orthoPath(sourceX, sourceY, jx, targetX, targetY);
 
   const gradId = `edge-shine-${source}-${target}`;
 
