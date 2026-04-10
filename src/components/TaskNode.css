@@ -297,16 +297,28 @@
 .task-node--locked    .task-node__status-label { color: #707070; }
 .task-node--completed .task-node__status-label { color: #484848; }
 
-/* ── Handles — invisible, pinned to vertical centre ── */
+/* ── Handles — hidden until node is hovered, then show as gold dots ── */
 .task-handle {
-  width: 1px !important;
-  height: 1px !important;
-  min-width: 1px !important;
-  min-height: 1px !important;
-  background: transparent !important;
-  border: none !important;
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  background: rgba(148, 100, 32, 0.85) !important;
+  border: 2px solid rgba(220, 160, 50, 0.9) !important;
+  border-radius: 50% !important;
   opacity: 0 !important;
-  pointer-events: none !important;
+  transition: opacity 0.15s ease, background 0.1s ease !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
+  cursor: crosshair !important;
+  z-index: 10 !important;
+}
+
+.task-node:hover .task-handle {
+  opacity: 1 !important;
+}
+
+.task-handle:hover {
+  background: rgba(255, 200, 80, 1) !important;
+  border-color: rgba(255, 220, 120, 1) !important;
 }

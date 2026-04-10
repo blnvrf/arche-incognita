@@ -1,16 +1,9 @@
 import { useStore } from '../store';
 
-// Must match store.js autoLayout constants
-const GRID_W  = 400;
 const NODE_W  = 240;
-const COL_GAP = 160;  // GRID_W - NODE_W
+const NODE_H  = 160;
 const R       = 40;   // corner radius
-const RAIL_PAD = 60;  // clearance above/below the grid bounding box
-
-// Centre x of the gap between col and col+1
-function gapCenter(col) {
-  return col * GRID_W + NODE_W + COL_GAP / 2; // col=0→320, col=1→720, col=2→1120 …
-}
+const RAIL_PAD = 60;  // clearance above/below the node bounding box
 
 // Rounded orthogonal polyline through an ordered set of points
 function buildPath(pts) {
@@ -38,20 +31,24 @@ export default function SmartEdge({
   style = {},
   markerEnd,
 }) {
+  const sourceNode = useStore((s) => s.nodes.find((n) => n.id === source));
   const targetNode = useStore((s) => s.nodes.find((n) => n.id === target));
   const nodes      = useStore((s) => s.nodes);
   const dashed = targetNode?.data?.requiresAll === false;
 
-  // Column indices derived from handle x-positions (always integers on a clean grid)
-  const srcCol  = Math.round((sourceX - NODE_W) / GRID_W);
-  const tgtCol  = Math.round(targetX / GRID_W);
-  const colSpan = tgtCol - srcCol;
+  // Mid-gap X: halfway between the right edge of the source node and the left edge of the target node
+  const srcRight = sourceNode ? sourceNode.position.x + (sourceNode.measured?.width ?? NODE_W) : sourceX;
+  const tgtLeft  = targetNode ? targetNode.position.x : targetX;
+  const jx = (srcRight + tgtLeft) / 2;
+
+  // Gap is wide enough for a clean stair if there's at least NODE_W of horizontal space
+  const gapWidth = tgtLeft - srcRight;
+  const isAdjacent = gapWidth >= 40; // any positive gap → stair route
 
   let d;
 
-  if (colSpan <= 1) {
-    // ── Adjacent columns: simple H→V→H stair through the gap midpoint ──────
-    const jx = (sourceX + targetX) / 2;
+  if (isAdjacent) {
+    // ── Normal stair: H→V→H through the midpoint gap ────────────────────────
     if (Math.abs(sourceY - targetY) < 1) {
       d = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
     } else {
@@ -68,21 +65,16 @@ export default function SmartEdge({
       ].join(' ');
     }
   } else {
-    // ── Skipping edge: fly via a horizontal rail outside the node grid ───────
-    //
-    // Key fix: use actual measured heights so the rail never clips a tall node.
-    // Route ABOVE when target is above source (shorter arc), BELOW otherwise.
+    // ── Skipping / back-edge: fly via a rail above or below all nodes ────────
     const tops    = nodes.map((n) => n.position?.y ?? 0);
-    const bottoms = nodes.map((n) => (n.position?.y ?? 0) + (n.measured?.height ?? 160));
+    const bottoms = nodes.map((n) => (n.position?.y ?? 0) + (n.measured?.height ?? NODE_H));
     const railAbove = Math.min(...tops)    - RAIL_PAD;
     const railBelow = Math.max(...bottoms) + RAIL_PAD;
-
-    // target above source → shorter to arc above; target below → arc below
     const railY = targetY <= sourceY ? railAbove : railBelow;
 
-    // Vertical stems sit in the column gaps, never inside node bounding boxes
-    const exitX  = gapCenter(srcCol);        // gap right after source col
-    const enterX = gapCenter(tgtCol - 1);    // gap right before target col
+    // Stems drop into the actual gap between source and target node columns
+    const exitX  = srcRight + (jx - srcRight) / 2;
+    const enterX = tgtLeft  - (tgtLeft - jx)  / 2;
 
     d = buildPath([
       { x: sourceX, y: sourceY },

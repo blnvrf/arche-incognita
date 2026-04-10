@@ -11,7 +11,7 @@ import {
 
 import { useStore } from './store';
 import TaskNode from './components/TaskNode';
-import SmartEdge from './components/SmartEdge';
+import TechTreeEdge from './components/TechTreeEdge';
 import NodeSidebar from './components/NodeSidebar';
 import FocusBar from './components/FocusBar';
 import BalanceCounter from './components/BalanceCounter';
@@ -21,7 +21,7 @@ import worldMap from './assets/old world map.png';
 import './App.css';
 
 const nodeTypes = { taskNode: TaskNode };
-const edgeTypes = { smart: SmartEdge };
+const edgeTypes = { techTreeEdge: TechTreeEdge };
 
 const STATUS_COLOR = {
   active:    '#ffd700',
@@ -156,6 +156,18 @@ function MapPanel() {
   );
 }
 
+// Registers ReactFlow callbacks in the store for use outside the ReactFlow context.
+function ReactFlowRegistrar() {
+  const { fitView, getViewport } = useReactFlow();
+  const registerFitView    = useStore((s) => s.registerFitView);
+  const registerGetViewport = useStore((s) => s.registerGetViewport);
+  useEffect(() => {
+    registerFitView(fitView);
+    registerGetViewport(getViewport);
+  }, [fitView, getViewport, registerFitView, registerGetViewport]);
+  return null;
+}
+
 // Pushes Zustand edge changes into React Flow's internal state.
 // Kept separate from refreshStatuses so they never race each other.
 function EdgeSyncer() {
@@ -177,14 +189,13 @@ export default function App() {
   const {
     nodes,
     onNodesChange,
+    onConnect,
     openAddSidebar, autoLayout, refreshStatuses,
     sidebarOpen, loadGraph,
   } = useStore();
 
   const fileInputRef = useRef(null);
   const [infoOpen, setInfoOpen] = useState(false);
-
-  useEffect(() => { autoLayout(); }, []);
 
   const onPaneClick = useCallback(() => {}, []);
 
@@ -209,7 +220,6 @@ export default function App() {
     reader.onload = (ev) => {
       try {
         loadGraph(JSON.parse(ev.target.result));
-        autoLayout();
       } catch {}
     };
     reader.readAsText(file);
@@ -239,12 +249,16 @@ export default function App() {
           nodes={nodes}
           defaultEdges={[]}
           onNodesChange={onNodesChange}
+          onConnect={onConnect}
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          nodesDraggable={false}
-          nodesConnectable={false}
+          nodesDraggable={true}
+          nodesConnectable={true}
+          connectOnClick={false}
           elementsSelectable={true}
+          snapToGrid={true}
+          snapGrid={[20, 20]}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.3}
@@ -252,13 +266,14 @@ export default function App() {
           deleteKeyCode="Delete"
           proOptions={{ hideAttribution: true }}
         >
+          <ReactFlowRegistrar />
           <EdgeSyncer />
           <StatusRefresher />
           <Background
             variant={BackgroundVariant.Dots}
-            gap={28}
-            size={1}
-            color="rgba(255,255,255,0.04)"
+            gap={20}
+            size={1.5}
+            color="rgba(255,255,255,0.07)"
           />
           <MapPanel />
         </ReactFlow>

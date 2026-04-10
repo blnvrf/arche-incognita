@@ -50,7 +50,7 @@ function ensureArcheEdges(nodes, edges) {
   const hasAnyPrereq = new Set(result.map((e) => e.target));
   for (const n of eligible) {
     if (!hasAnyPrereq.has(n.id)) {
-      result.push({ id: `e-arche-${n.id}`, source: 'arche', target: n.id, type: 'smart' });
+      result.push({ id: `e-arche-${n.id}`, source: 'arche', target: n.id, type: 'techTreeEdge' });
     }
   }
   return result;
@@ -64,8 +64,8 @@ function loadFromStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    // Migrate old edge types to 'smart'
-    if (data?.edges) data.edges = data.edges.map((e) => ({ ...e, type: 'smart' }));
+    // Migrate all edge types to 'techTreeEdge'
+    if (data?.edges) data.edges = data.edges.map((e) => ({ ...e, type: 'techTreeEdge' }));
     return data;
   } catch {
     return null;
@@ -137,6 +137,10 @@ export const useStore = create((set, get) => ({
   sidebarOpen: false,
   sidebarMode: 'add', // 'add' | 'edit'
   editingNode: null,
+  _fitView: null,      // registered by ReactFlowRegistrar inside <ReactFlow>
+  _getViewport: null,  // registered by ReactFlowRegistrar inside <ReactFlow>
+  registerFitView:     (fn) => set({ _fitView: fn }),
+  registerGetViewport: (fn) => set({ _getViewport: fn }),
 
   // React Flow handlers
   onNodesChange: (changes) => {
@@ -150,7 +154,7 @@ export const useStore = create((set, get) => ({
     saveToStorage(get().nodes, edges, get().balance);
   },
   onConnect: (connection) => {
-    const edges = addEdge({ ...connection, type: 'smart' }, get().edges);
+    const edges = addEdge({ ...connection, type: 'techTreeEdge' }, get().edges);
     set({ edges });
     saveToStorage(get().nodes, edges, get().balance);
   },
@@ -159,7 +163,7 @@ export const useStore = create((set, get) => ({
     const { nodes } = get();
     let edges = get().edges;
     if (edges.some((e) => e.source === sourceId && e.target === targetId)) return;
-    edges = [...edges, { id: `e-${sourceId}-${targetId}-${Date.now()}`, source: sourceId, target: targetId, type: 'smart' }];
+    edges = [...edges, { id: `e-${sourceId}-${targetId}-${Date.now()}`, source: sourceId, target: targetId, type: 'techTreeEdge' }];
     edges = ensureArcheEdges(nodes, edges);
     set({ edges });
     saveToStorage(nodes, edges, get().balance);
@@ -245,10 +249,23 @@ export const useStore = create((set, get) => ({
   addNode: (nodeData) => {
     const { nodes, balance } = get();
     const id = `node-${Date.now()}`;
+
+    // Place new node at the current viewport center, snapped to 20px grid
+    const snap = (v) => Math.round(v / 20) * 20;
+    const getViewport = get()._getViewport;
+    let cx = 0, cy = 0;
+    if (getViewport) {
+      const vp = getViewport();
+      cx = (-vp.x + window.innerWidth  / 2) / vp.zoom;
+      cy = (-vp.y + window.innerHeight / 2) / vp.zoom;
+    }
+    const NODE_W = 240, NODE_H = 220;
+    const position = { x: snap(cx - NODE_W / 2), y: snap(cy - NODE_H / 2) };
+
     const newNode = {
       id,
       type: 'taskNode',
-      position: { x: 200 + Math.random() * 200, y: 200 + Math.random() * 200 },
+      position,
       data: { ...nodeData, status: 'available' },
     };
     const allNodes = [...nodes, newNode];
@@ -282,7 +299,7 @@ export const useStore = create((set, get) => ({
   },
 
   loadGraph: (data) => {
-    let edges = (data.edges ?? []).map((e) => ({ ...e, type: 'smart' }));
+    let edges = (data.edges ?? []).map((e) => ({ ...e, type: 'techTreeEdge' }));
     const balance = data.balance ?? 0;
     const rawNodes = data.nodes ?? [];
     edges = ensureArcheEdges(rawNodes, edges);
@@ -297,57 +314,59 @@ export const useStore = create((set, get) => ({
     let edges = ensureArcheEdges(nodes, get().edges);
     const elk = new ELK();
 
-    const NODE_W  = 240;
-    const NODE_H  = 160;
-    const COL_GAP = 160; // gap between columns (GRID_W = NODE_W + COL_GAP = 400)
-    const ROW_GAP = 60;  // gap between rows    (GRID_H = NODE_H + ROW_GAP = 220)
+    const NODE_W        = 240;
+    const NODE_H_FALLBACK = 220; // matches actual rendered card height
 
-    // Separate incognita nodes — they get their own final column
+    // Incognita nodes float separately — exclude from ELK graph
     const regularNodes   = nodes.filter((n) => !n.data?.isIncognita);
     const incognitaNodes = nodes.filter((n) => n.data?.isIncognita);
     const regularIds     = new Set(regularNodes.map((n) => n.id));
+    // Pass ALL edges whose both endpoints are regular nodes
     const regularEdges   = edges.filter((e) => regularIds.has(e.source) && regularIds.has(e.target));
 
     const graph = {
       id: 'root',
       layoutOptions: {
-        'elk.algorithm': 'layered',
+        'algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(COL_GAP),
-        'elk.spacing.nodeNode': String(ROW_GAP),
+        'elk.layered.spacing.nodeNodeBetweenLayers': '300',
+        'elk.spacing.nodeNode': '160',
+        'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+        'elk.edgeRouting': 'ORTHOGONAL',
+        'elk.layered.unnecessaryBendpoints': 'true',
+        'elk.layered.spacing.edgeNodeBetweenLayers': '80',
+        'elk.padding': '[top=60, left=60, bottom=60, right=60]',
       },
-      children: regularNodes.map((n) => ({ id: n.id, width: NODE_W, height: NODE_H })),
-      edges: regularEdges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
+      children: regularNodes.map((n) => ({
+        id: n.id,
+        width: NODE_W,
+        // Use React Flow's measured height if available, otherwise fall back
+        height: n.measured?.height ?? NODE_H_FALLBACK,
+      })),
+      edges: regularEdges.map((e) => ({
+        id: e.id,
+        sources: [e.source],
+        targets: [e.target],
+      })),
     };
+
+    console.log('[autoLayout] ELK input:', JSON.stringify(graph, null, 2));
 
     const laid = await elk.layout(graph);
 
-    // Assign every node to an integer (col, row) slot based on ELK's x/y ordering,
-    // then place it at exactly col * GRID_W, row * GRID_H so the whole graph is a
-    // perfect grid. SmartEdge's midpoint formula then always lands dead-center in
-    // the gap between columns — like a Civ tech tree.
-    const GRID_W = NODE_W + COL_GAP;
-    const GRID_H = NODE_H + ROW_GAP;
+    console.log('[autoLayout] ELK output:', JSON.stringify(laid, null, 2));
 
-    const sorted = [...laid.children].sort((a, b) => a.x - b.x);
-    const layers = [];
-    for (const node of sorted) {
-      const last = layers[layers.length - 1];
-      if (!last || node.x - last[0].x > NODE_W / 2) layers.push([node]);
-      else last.push(node);
+    // ELK returns top-left corner positions — use them directly
+    const posMap = {};
+    for (const n of laid.children) {
+      posMap[n.id] = { x: Math.round(n.x), y: Math.round(n.y) };
     }
 
-    const posMap = {};
-    layers.forEach((layer, col) => {
-      layer.sort((a, b) => a.y - b.y);
-      layer.forEach((n, row) => {
-        posMap[n.id] = { x: col * GRID_W, y: row * GRID_H };
-      });
-    });
-
-    // Incognita nodes go in the column after all regular columns
+    // Incognita nodes stack in a column after all regular nodes
+    const maxX = Math.max(0, ...Object.values(posMap).map((p) => p.x));
     incognitaNodes.forEach((n, i) => {
-      posMap[n.id] = { x: layers.length * GRID_W, y: i * GRID_H };
+      posMap[n.id] = { x: maxX + NODE_W + 300, y: i * (NODE_H_FALLBACK + 160) };
     });
 
     const positioned = nodes.map((n) => ({
@@ -358,5 +377,9 @@ export const useStore = create((set, get) => ({
 
     set({ nodes: updated, edges });
     saveToStorage(updated, edges, balance);
+
+    // Fit view after positions are applied (runs inside ReactFlow context via registrar)
+    const fitView = get()._fitView;
+    if (fitView) setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 50);
   },
 }));

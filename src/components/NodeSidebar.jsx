@@ -54,7 +54,7 @@ const DEFAULT_FORM = {
 };
 
 export default function NodeSidebar() {
-  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, uncompleteNode, addEdgeBetween, removeEdge, autoLayout, nodes, edges } = useStore();
+  const { sidebarOpen, sidebarMode, editingNode, closeSidebar, addNode, updateNode, deleteNode, completeNode, uncompleteNode, addEdgeBetween, removeEdge, nodes, edges } = useStore();
 
   const [form, setForm] = useState(DEFAULT_FORM);
   const [newPrereqs, setNewPrereqs] = useState([]);
@@ -82,7 +82,7 @@ export default function NodeSidebar() {
 
   if (!sidebarOpen) return null;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!form.title.trim()) return;
     const nodeData = {
       title: form.title.trim(),
@@ -99,10 +99,8 @@ export default function NodeSidebar() {
       const newId = addNode(nodeData);
       newPrereqs.forEach((pid) => addEdgeBetween(pid, newId));
       newUnlocks.forEach((uid) => addEdgeBetween(newId, uid));
-      await autoLayout();
     } else {
       updateNode(editingNode.id, nodeData);
-      await autoLayout();
     }
     closeSidebar();
   };
