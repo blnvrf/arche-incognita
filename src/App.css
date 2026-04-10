@@ -169,6 +169,20 @@
   z-index: 80;
 }
 
+/* ── Music playing state (gold, like available nodes) ── */
+.fab-btn--music-playing {
+  background-image:
+    linear-gradient(#11100c, #16120d),
+    conic-gradient(from var(--border-angle),
+      #3d1c05 0%, #3d1c05 30%,
+      #c07028 50%, #e09a38 62%,
+      #f0b458 68%, #e09a38 74%,
+      #c07028 86%, #3d1c05 100%
+    );
+  color: #d4a060;
+  animation: border-orbit 9s linear infinite;
+}
+
 .fab-btn {
   width: 42px;
   height: 42px;

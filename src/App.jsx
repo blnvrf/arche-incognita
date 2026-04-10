@@ -15,9 +15,10 @@ import TechTreeEdge from './components/TechTreeEdge';
 import NodeSidebar from './components/NodeSidebar';
 import FocusBar from './components/FocusBar';
 import BalanceCounter from './components/BalanceCounter';
-import { Save, FolderOpen, RefreshCw } from 'lucide-react';
+import { Save, FolderOpen, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import InfoModal from './components/InfoModal';
 import worldMap from './assets/old world map.png';
+import music from './assets/civii audio.mp3';
 import './App.css';
 
 const nodeTypes = { taskNode: TaskNode };
@@ -197,6 +198,39 @@ export default function App() {
   const fileInputRef = useRef(null);
   const [infoOpen, setInfoOpen] = useState(false);
 
+  // ── Music player ──────────────────────────────────────────────────────────
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    const audio = new Audio(music);
+    audio.loop = true;
+    audio.volume = 0.45;
+    audioRef.current = audio;
+    // Auto-play on first user interaction (browsers block autoplay before that)
+    const tryPlay = () => {
+      audio.play().then(() => setPlaying(true)).catch(() => {});
+      window.removeEventListener('pointerdown', tryPlay);
+    };
+    window.addEventListener('pointerdown', tryPlay);
+    return () => {
+      window.removeEventListener('pointerdown', tryPlay);
+      audio.pause();
+      audio.src = '';
+    };
+  }, []);
+
+  const toggleMusic = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play().then(() => setPlaying(true)).catch(() => {});
+    }
+  };
+
   const onPaneClick = useCallback(() => {}, []);
 
   const handleExport = () => {
@@ -281,8 +315,15 @@ export default function App() {
 
       {infoOpen && <InfoModal onClose={() => setInfoOpen(false)} />}
 
-      {/* FAB tools — Info / Refresh / Export / Import */}
+      {/* FAB tools — Music / Info / Refresh / Export / Import */}
       <div className="fab-tools">
+        <button
+          className={`fab-btn ${playing ? 'fab-btn--music-playing' : ''}`}
+          onClick={toggleMusic}
+          title={playing ? 'Pause music' : 'Play music'}
+        >
+          {playing ? <Volume2 size={18} strokeWidth={1.8} /> : <VolumeX size={18} strokeWidth={1.8} />}
+        </button>
         <button className="fab-btn fab-btn--info" onClick={() => setInfoOpen(true)} title="How to use">i</button>
         <button className="fab-btn" onClick={() => { autoLayout(); }} title="Sort & recalculate"><RefreshCw size={18} strokeWidth={1.8} /></button>
         <button className="fab-btn" onClick={handleExport} title="Export graph"><Save size={18} strokeWidth={1.8} /></button>
