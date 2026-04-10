@@ -121,9 +121,6 @@ export default function SmartEdge({
 
       {/* hit area */}
       <path d={d} fill="none" stroke="transparent" strokeWidth={20} />
-      {/* dark background border — separates overlapping paths */}
-      <path d={d} fill="none" stroke="#090c11" strokeWidth={8}
-            strokeLinecap="round" strokeLinejoin="round" />
       {/* base edge */}
       <path
         d={d}
