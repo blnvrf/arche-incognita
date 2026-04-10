@@ -306,8 +306,8 @@ export default function App() {
           <Background
             variant={BackgroundVariant.Dots}
             gap={20}
-            size={1.5}
-            color="rgba(255,255,255,0.07)"
+            size={0}
+            color="transparent"
           />
           <MapPanel />
         </ReactFlow>
