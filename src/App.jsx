@@ -207,7 +207,10 @@ export default function App() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      try { loadGraph(JSON.parse(ev.target.result)); } catch {}
+      try {
+        loadGraph(JSON.parse(ev.target.result));
+        autoLayout();
+      } catch {}
     };
     reader.readAsText(file);
     e.target.value = '';

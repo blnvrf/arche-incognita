@@ -1,14 +1,18 @@
 import { useStore } from '../store';
 
-// Must match autoLayout constants in store.js
-const GRID_W  = 400;  // col * GRID_W  = node left edge
-const NODE_W  = 240;  // node width
-const NODE_H  = 160;  // node height
+// Must match store.js autoLayout constants
+const GRID_W  = 400;
+const NODE_W  = 240;
 const COL_GAP = 160;  // GRID_W - NODE_W
-const R       = 10;   // corner radius
-const RAIL_PAD = 36;  // px clearance above/below the grid for long-range edges
+const R       = 40;   // corner radius
+const RAIL_PAD = 60;  // clearance above/below the grid bounding box
 
-// Rounded orthogonal polyline — all turns are 90° with radius R
+// Centre x of the gap between col and col+1
+function gapCenter(col) {
+  return col * GRID_W + NODE_W + COL_GAP / 2; // col=0→320, col=1→720, col=2→1120 …
+}
+
+// Rounded orthogonal polyline through an ordered set of points
 function buildPath(pts) {
   if (pts.length < 2) return '';
   if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
@@ -27,11 +31,6 @@ function buildPath(pts) {
   return d;
 }
 
-// Center x of the gap between col and col+1
-function gapCenter(col) {
-  return col * GRID_W + NODE_W + COL_GAP / 2; // e.g. col=0 → x=320
-}
-
 export default function SmartEdge({
   source, target,
   sourceX, sourceY,
@@ -43,9 +42,7 @@ export default function SmartEdge({
   const nodes      = useStore((s) => s.nodes);
   const dashed = targetNode?.data?.requiresAll === false;
 
-  // Derive grid columns from handle positions:
-  //   sourceX = srcCol * GRID_W + NODE_W   (right handle)
-  //   targetX = tgtCol * GRID_W            (left  handle)
+  // Column indices derived from handle x-positions (always integers on a clean grid)
   const srcCol  = Math.round((sourceX - NODE_W) / GRID_W);
   const tgtCol  = Math.round(targetX / GRID_W);
   const colSpan = tgtCol - srcCol;
@@ -53,8 +50,8 @@ export default function SmartEdge({
   let d;
 
   if (colSpan <= 1) {
-    // ── Adjacent columns: simple H→V→H stair through the gap centre ──────────
-    const jx = (sourceX + targetX) / 2; // always = gapCenter(srcCol) on a clean grid
+    // ── Adjacent columns: simple H→V→H stair through the gap midpoint ──────
+    const jx = (sourceX + targetX) / 2;
     if (Math.abs(sourceY - targetY) < 1) {
       d = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
     } else {
@@ -71,22 +68,21 @@ export default function SmartEdge({
       ].join(' ');
     }
   } else {
-    // ── Skipping edge: fly over the grid on a horizontal rail ─────────────────
-    // Rail sits above or below ALL nodes so it never crosses a node bounding box.
-    const nodeYs = nodes.map((n) => n.position?.y ?? 0);
-    const minY   = Math.min(...nodeYs);
-    const maxY   = Math.max(...nodeYs);
+    // ── Skipping edge: fly via a horizontal rail outside the node grid ───────
+    //
+    // Key fix: use actual measured heights so the rail never clips a tall node.
+    // Route ABOVE when target is above source (shorter arc), BELOW otherwise.
+    const tops    = nodes.map((n) => n.position?.y ?? 0);
+    const bottoms = nodes.map((n) => (n.position?.y ?? 0) + (n.measured?.height ?? 160));
+    const railAbove = Math.min(...tops)    - RAIL_PAD;
+    const railBelow = Math.max(...bottoms) + RAIL_PAD;
 
-    // Go above when source is higher than or equal to target (keeps the U tidy);
-    // go below otherwise.
-    const railY = sourceY <= targetY
-      ? minY - RAIL_PAD
-      : maxY + NODE_H + RAIL_PAD;
+    // target above source → shorter to arc above; target below → arc below
+    const railY = targetY <= sourceY ? railAbove : railBelow;
 
-    // Exit through the gap immediately after the source column,
-    // enter through the gap immediately before the target column.
-    const exitX  = gapCenter(srcCol);
-    const enterX = gapCenter(tgtCol - 1);
+    // Vertical stems sit in the column gaps, never inside node bounding boxes
+    const exitX  = gapCenter(srcCol);        // gap right after source col
+    const enterX = gapCenter(tgtCol - 1);    // gap right before target col
 
     d = buildPath([
       { x: sourceX, y: sourceY },
@@ -98,7 +94,7 @@ export default function SmartEdge({
     ]);
   }
 
-  const gradId    = `edge-shine-${source}-${target}`;
+  const gradId     = `edge-shine-${source}-${target}`;
   const DASH_CYCLE = 20;
   const approxLen  = Math.abs(targetX - sourceX) + Math.abs(targetY - sourceY);
   const dashOffset = approxLen % DASH_CYCLE;
@@ -126,7 +122,7 @@ export default function SmartEdge({
       {/* hit area */}
       <path d={d} fill="none" stroke="transparent" strokeWidth={20} />
       {/* dark background border — separates overlapping paths */}
-      <path d={d} fill="none" stroke="#090c11" strokeWidth={10}
+      <path d={d} fill="none" stroke="#090c11" strokeWidth={8}
             strokeLinecap="round" strokeLinejoin="round" />
       {/* base edge */}
       <path
