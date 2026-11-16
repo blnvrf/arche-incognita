@@ -1,22 +1,161 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/arche-incognita/favicon.png" />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6YCPSW4J0K"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-6YCPSW4J0K');
-    </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Arche Incognita</title>
-    <script type="module" crossorigin src="/arche-incognita/assets/index-DRO1SkLc.js"></script>
-    <link rel="stylesheet" crossorigin href="/arche-incognita/assets/index-C3s4vWrK.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>ArcheIncognita — Personal event map</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;display=swap" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="header">
+    <span class="wordmark" aria-label="ArcheIncognita"><span class="wordmark-full" aria-hidden="true"><i>Arche</i>Incognita</span><i class="wordmark-short" aria-hidden="true">AI</i></span>
+    <button id="current-event-label" type="button" class="current-pill" hidden>
+      <span class="pill-bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <span id="current-event-name"></span>
+    </button>
+    <div class="header-actions" id="header-actions">
+      <div class="file-actions" id="file-actions">
+        <button type="button" class="header-text" id="export-map" title="Save a JSON backup">Save</button>
+        <button type="button" class="header-text" id="import-map" title="Load a JSON backup">Load</button>
+        <button type="button" class="header-text" id="details-button">Details</button>
+      </div>
+      <button type="button" class="button primary" id="new-button"><span aria-hidden="true">＋</span> <span id="new-button-label">New event</span></button>
+    </div>
+    <input id="import-file" type="file" accept=".json,application/json" hidden>
+  </header>
+  <main class="workspace">
+    <section id="map" class="map" aria-label="ArcheIncognita workspace" data-view="tree">
+      <div id="viewport" class="viewport">
+        <div id="map-scene" class="map-scene">
+          <svg id="lines" aria-label="Map connections"><defs>
+            <radialGradient id="map-glow">
+              <stop offset="0" class="glow-center" stop-color="#281c0b" stop-opacity=".68"/>
+              <stop offset=".42" class="glow-mid" stop-color="#1b1208" stop-opacity=".72"/>
+              <stop offset=".86" class="glow-edge" stop-color="#0d0904"/>
+              <stop offset="1" stop-color="#000"/>
+            </radialGradient>
+            <radialGradient id="compass-gradient" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1">
+              <stop offset="0" stop-color="#fff"/>
+              <stop offset=".48" stop-color="#fff" stop-opacity=".75"/>
+              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+            <clipPath id="card-outline" clipPathUnits="objectBoundingBox">
+              <path d="M .049 0 H .951 Q .983 0 .984 .09 L .998 .91 Q 1 1 .966 1 H .034 Q 0 1 .002 .91 L .016 .09 Q .017 0 .049 0 Z"/>
+            </clipPath>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M1 1 9 5 1 9" fill="none" class="arrow-head" stroke-width="1.15"/></marker>
+            <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M1 1 9 5 1 9" fill="none" class="arrow-head active" stroke-width="1.15"/></marker>
+          </defs>
+          <g aria-hidden="true">
+            <image id="map-artwork" href="map-artwork.webp" preserveAspectRatio="none"/>
+            <ellipse id="glow-ellipse" fill="url(#map-glow)"/>
+          </g>
+          <g id="radial-guides" aria-hidden="true"></g>
+          <g id="graph-lines"></g>
+          <path id="connection-preview" class="edge preview" marker-end="url(#arrow-active)" aria-hidden="true"/>
+          </svg>
+          <div id="nodes" class="nodes"></div>
+        </div>
+      </div>
+      <section id="collection" class="collection" hidden></section>
+      <div class="map-toolbar">
+        <div class="map-filters">
+          <select id="map-picker" class="map-picker map-control" aria-label="Current graph and actions" title="Choose a graph"></select>
+          <button id="date-filter" type="button" class="date-text" aria-haspopup="dialog" title="Choose a date range">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>
+            </svg>
+            <span id="date-filter-label">All dates</span>
+          </button>
+          <div class="mobile-quick-controls mobile-only" id="mobile-quick-controls">
+            <button id="mobile-menu-button" type="button" aria-label="Menu" title="Menu" aria-haspopup="dialog" aria-controls="mobile-menu">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <button id="mobile-zoom" type="button" aria-label="Center on arche at 100%">100%</button>
+          </div>
+        </div>
+        <div id="gains-summary" class="gains-summary" aria-label="Net total">
+          <span id="gains-total">$0</span>
+        </div>
+      </div>
+      <nav id="workspace-links" class="workspace-links" aria-label="Workspace tools">
+        <button id="minor-view" type="button" aria-pressed="false">Minor tasks</button>
+        <button id="tap-view" type="button" aria-pressed="false">TAP</button>
+      </nav>
+      <div id="hint" class="map-hint" role="status" hidden></div>
+      <div id="map-controls" class="map-controls">
+        <div id="desktop-zoom" class="zoom" aria-label="Zoom controls">
+          <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+          <label class="zoom-value">
+            <input id="zoom-level" type="number" min="4" max="400" step="any" value="100" aria-label="Zoom percentage" title="Type a zoom percentage">
+            <span aria-hidden="true">%</span>
+          </label>
+          <button id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+          <button id="zoom-reset" aria-label="Center on arche at 100%" title="Center on arche at 100%">1:1</button>
+          <button id="fit" aria-label="Fit map" title="Fit map">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <ellipse cx="12" cy="12" rx="4" ry="9"/>
+              <path d="M3 12h18"/>
+            </svg>
+          </button>
+          <button id="toggle-completed" aria-label="Hide completed events" title="Hide completed events" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2 12s3.7-6 10-6 10 6 10 6-3.7 6-10 6-10-6-10-6Z"/>
+              <circle cx="12" cy="12" r="2.7"/>
+              <path class="visibility-slash" d="m4 4 16 16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+    <aside id="drawer" class="drawer" aria-label="Event details" hidden></aside>
+  </main>
+  <dialog id="mobile-menu" class="mobile-menu" aria-labelledby="mobile-menu-title">
+    <div class="dialog-heading">
+      <h2 id="mobile-menu-title">Menu</h2>
+      <button type="button" id="mobile-menu-close" class="close" aria-label="Close menu">×</button>
+    </div>
+    <nav id="mobile-menu-actions" aria-label="Workspace navigation"></nav>
+  </dialog>
+  <dialog id="dialog" aria-labelledby="dialog-title">
+    <form id="form">
+      <div class="dialog-heading"><div><div class="eyebrow">EVENT MAP</div><h2 id="dialog-title">New event</h2></div><button type="button" class="close" id="cancel-form" aria-label="Close form">×</button></div>
+      <label>Title<input name="title" maxlength="80" required></label>
+      <label id="event-date-field">Event date<input type="date" name="eventDate" min="2026-11-01" max="9999-12-31"></label>
+      <label>Description<textarea name="description" rows="5" placeholder="What needs to happen?"></textarea></label>
+      <label id="recurring-field" class="check-field">
+        <input name="recurring" type="checkbox">
+        <span>Recurring</span>
+      </label>
+      <div id="task-money-fields" class="money-fields">
+        <label>Hourly rate ($)<input name="hourlyRate" type="number" min="0" step="0.01" placeholder="Optional"></label>
+        <label>Cost ($)<input name="cost" type="number" min="0" step="0.01" placeholder="Optional"></label>
+        <label>Gain ($)<input name="gain" type="number" min="0" step="0.01" placeholder="Optional" title="Added when the event is completed"></label>
+      </div>
+      <div id="connection-fields">
+        <label>Connect from<select name="source"></select></label>
+        <p class="field-help">Choose a source to draw an arrow, or select No connection to start on the outer ring.</p>
+      </div>
+      <div class="dialog-actions"><button type="button" class="button quiet" id="cancel-button">Cancel</button><button type="submit" class="button primary" id="submit-button">Add event</button></div>
+    </form>
+  </dialog>
+  <dialog id="edit-dialog" aria-labelledby="edit-title">
+    <form id="edit-form">
+      <div class="dialog-heading">
+        <div><div class="eyebrow" id="edit-eyebrow"></div><h2 id="edit-title"></h2></div>
+        <button type="button" class="close" id="edit-close" aria-label="Close editor">×</button>
+      </div>
+      <div id="edit-fields"></div>
+      <div class="dialog-actions">
+        <button type="button" class="button quiet" id="edit-cancel">Cancel</button>
+        <button type="submit" class="button primary" id="edit-submit">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
 </html>
