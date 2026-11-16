@@ -1,6 +1,6 @@
 # ArcheIncognita
 
-On Mac, unzip **ArcheIncognita-Mac.zip**, drag **ArcheIncognita.app** into Applications, and open it. The universal app requires macOS 13 or later. A fresh workspace starts with *arche*. Use **New event** to add your own events.
+On Mac, unzip **ArcheIncognita-Mac.zip**, drag **ArcheIncognita.app** into Applications, and open it. The universal app requires macOS 13 or later. A fresh workspace opens a sample graph, **Your path to something**, with everyday goals (money, health, learning) to show how events, dependencies, recurring tasks, costs, and gains fit together. Edit or delete its events, or use **Actions → New from scratch** for an empty graph.
 
 You can also open `index.html` in a browser. Instrument Serif loads from Google Fonts when online.
 
@@ -49,7 +49,9 @@ Set an optional **Hourly rate ($)** in the task editor to display earnings on th
 
 ## Saving and restoring
 
-The Mac app autosaves in `~/Library/Application Support/ArcheIncognita/map.json`. The browser version keeps its own workspace in the current browser profile. Use **Save** in the browser and **Load** in the Mac app to transfer it. The JSON backup includes all graphs and both card boards, including card positions. Export captures elapsed time through the moment of export. Imported timers start paused.
+The Mac app autosaves in `~/Library/Application Support/ArcheIncognita/map.json`. The browser version keeps its own workspace in the current browser profile. Use **Save** in the browser and **Load** in the Mac app to transfer it.
+
+Press **Ctrl+S** (⌘S on Mac) to save over the last file you saved; the first time, it asks where to save. **Shift+Ctrl+S** (⇧⌘S) always asks for a new file. The Mac app remembers the last file between launches. In the browser, overwriting works in Chrome and Edge for the current session; Safari and Firefox download a new copy instead. The JSON backup includes all graphs and both card boards, including card positions. Export captures elapsed time through the moment of export. Imported timers start paused.
 
 Use **Load** to restore a file. The app checks the file and asks before replacing the saved workspace. Older single-map backups replace the selected graph, using the **$1M** events from that backup. The confirmation lets you export your existing workspace first.
 

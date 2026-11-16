@@ -8,6 +8,10 @@ final class ArcheIncognita: NSObject, NSApplicationDelegate, WKNavigationDelegat
     private var webView: WKWebView!
     private var page: URL!
     private var stateFile: URL!
+    private var lastBackup: URL? {
+        get { UserDefaults.standard.string(forKey: "lastBackupPath").map { URL(fileURLWithPath: $0) } }
+        set { UserDefaults.standard.set(newValue?.path, forKey: "lastBackupPath") }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard let resources = Bundle.main.resourceURL else {
@@ -73,7 +77,10 @@ final class ArcheIncognita: NSObject, NSApplicationDelegate, WKNavigationDelegat
 
         let file = NSMenuItem()
         let fileMenu = NSMenu(title: "File")
-        fileMenu.addItem(withTitle: "Save Backup…", action: #selector(saveBackup), keyEquivalent: "s").target = self
+        fileMenu.addItem(withTitle: "Save", action: #selector(quickSave), keyEquivalent: "s").target = self
+        let saveAs = fileMenu.addItem(withTitle: "Save As…", action: #selector(saveBackup), keyEquivalent: "s")
+        saveAs.keyEquivalentModifierMask = [.command, .shift]
+        saveAs.target = self
         fileMenu.addItem(withTitle: "Load Backup…", action: #selector(loadBackup), keyEquivalent: "o").target = self
         fileMenu.addItem(.separator())
         fileMenu.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
@@ -94,7 +101,11 @@ final class ArcheIncognita: NSObject, NSApplicationDelegate, WKNavigationDelegat
     }
 
     @objc private func saveBackup() {
-        webView.evaluateJavaScript("document.getElementById('export-map').click()")
+        webView.evaluateJavaScript("window.archeSave(false)")
+    }
+
+    @objc private func quickSave() {
+        webView.evaluateJavaScript("window.archeSave(true)")
     }
 
     @objc private func loadBackup() {
@@ -132,7 +143,19 @@ final class ArcheIncognita: NSObject, NSApplicationDelegate, WKNavigationDelegat
                 replyHandler(nil, "Invalid backup request.")
                 return
             }
-            if action == "save", let contents = body["contents"] as? String, let name = body["name"] as? String {
+            if action == "quicksave", let contents = body["contents"] as? String, let name = body["name"] as? String {
+                if let url = lastBackup,
+                   FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path) {
+                    do {
+                        try Data(contents.utf8).write(to: url, options: .atomic)
+                        replyHandler(url.lastPathComponent, nil)
+                    } catch {
+                        replyHandler(nil, error.localizedDescription)
+                    }
+                } else {
+                    saveFile(name: name, contents: contents, reply: replyHandler)
+                }
+            } else if action == "save", let contents = body["contents"] as? String, let name = body["name"] as? String {
                 saveFile(name: name, contents: contents, reply: replyHandler)
             } else if action == "load" {
                 openFile(reply: replyHandler)
@@ -147,12 +170,14 @@ final class ArcheIncognita: NSObject, NSApplicationDelegate, WKNavigationDelegat
     private func saveFile(name: String, contents: String, reply: @escaping (Any?, String?) -> Void) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = name
+        panel.nameFieldStringValue = lastBackup?.lastPathComponent ?? name
+        if let folder = lastBackup?.deletingLastPathComponent() { panel.directoryURL = folder }
         panel.beginSheetModal(for: window) { response in
             guard response == .OK, let url = panel.url else { reply(false, nil); return }
             do {
                 try Data(contents.utf8).write(to: url, options: .atomic)
-                reply(true, nil)
+                self.lastBackup = url
+                reply(url.lastPathComponent, nil)
             } catch {
                 reply(nil, error.localizedDescription)
             }

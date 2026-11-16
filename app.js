@@ -64,9 +64,43 @@ const VIEWS = {
   tap: { name: "TAP", add: "Add TAP", key: "tapEntries" }
 };
 
-function defaultWorkspace(tree = { nodes: [], edges: [] }) {
+const SAMPLE_NAME = "Your path to something";
+
+function sampleTree(now = Date.now()) {
+  const event = (id, title, description, extra = {}) => ({ id: `sample-${id}`, title, description, createdAt: now, ...extra });
+  const nodes = [
+    event("spending", "Track your spending", "Write down everything you spend for 30 days. No judgment, just notice where the money goes."),
+    event("walk", "Walk 20 minutes a day", "Any pace counts. Complete it after each walk and restore it for the next one to build a streak.", { recurring: true }),
+    event("sell", "Sell things you no longer use", "Clear one closet or shelf and list what you don’t need.",
+      { complete: true, completions: [{ at: now, complete: true }], gainCents: 12000 }),
+    event("skill", "Pick one skill to learn", "Something useful at work or fun for you: cooking, spreadsheets, a language, an instrument."),
+    event("budget", "Make a simple monthly budget", "Use your 30 days of spending to set limits for the big categories."),
+    event("class", "Join a weekly class or group", "Yoga, a running club, a dance class. Other people make it easier to keep going.", { costCents: 4000 }),
+    event("course", "Finish an online course", "Set aside two evenings a week until it’s done.", { costCents: 3000 }),
+    event("fund", "Save one month of expenses", "Automate a small transfer into a separate account every payday."),
+    event("5k", "Run your first 5K", "Sign up for a local race so there’s a date to train for."),
+    event("raise", "Ask for a raise or a new role", "Bring what you learned and a list of your wins.", { gainCents: 300000 }),
+    event("trip", "Take a weekend trip you’ve earned", "Plan it once your safety net is in place.", { costCents: 40000 })
+  ];
+  const angles = {
+    spending: 3.55, sell: 2.75, budget: 3.65, fund: 3.3, trip: 4.6,
+    walk: 1.3, class: 1.2, "5k": 1.1, skill: 5.75, course: 5.6, raise: 5.45
+  };
+  for (const node of nodes) node.angle = angles[node.id.slice(7)];
+  const id = (name) => `sample-${name}`;
+  const edges = [
+    [ROOT, id("spending")], [ROOT, id("walk")], [ROOT, id("sell")], [ROOT, id("skill")],
+    [id("spending"), id("budget")], [id("walk"), id("class")], [id("skill"), id("course")],
+    [id("budget"), id("fund")], [id("sell"), id("fund"), { label: "kick-start" }],
+    [id("class"), id("5k")], [id("course"), id("raise")],
+    [id("fund"), id("trip")], [id("raise"), id("trip")]
+  ];
+  return { nodes, edges, current: id("spending") };
+}
+
+function defaultWorkspace(tree = { nodes: [], edges: [] }, name = initialMonth) {
   return {
-    graphs: [{ id: "first", name: initialMonth, tree }], activeGraphId: "first",
+    graphs: [{ id: "first", name, tree }], activeGraphId: "first",
     minorTasks: [], tapEntries: [], view: "tree", eventDatesInitialized: true
   };
 }
@@ -184,7 +218,7 @@ function loadWorkspace() {
   } catch {
     // The map can still run when storage is unavailable.
   }
-  return defaultWorkspace();
+  return defaultWorkspace(sampleTree(), SAMPLE_NAME);
 }
 
 let migrated = false;
@@ -1863,19 +1897,41 @@ function readBackup(text) {
   throw new Error("Choose an ArcheIncognita JSON backup.");
 }
 
-async function exportMap() {
+let saveHandle = null;
+
+async function exportMap({ quick = false } = {}) {
   const snapshot = backup();
   const name = `archeincognita-${snapshot.savedAt.slice(0, 10)}.json`;
   const contents = JSON.stringify(snapshot, null, 2) + "\n";
   const native = window.webkit?.messageHandlers?.archeBackup;
   if (native) {
     try {
-      if (await native.postMessage({ action: "save", name, contents })) toast("Backup saved.");
+      const saved = await native.postMessage({ action: quick ? "quicksave" : "save", name, contents });
+      if (saved) toast(typeof saved === "string" ? `Saved to ${saved}.` : "Backup saved.");
     } catch {
       toast("Could not save the backup.");
     }
     return;
   }
+  if (window.showSaveFilePicker) {
+    try {
+      if (!quick || !saveHandle) {
+        saveHandle = await window.showSaveFilePicker({
+          suggestedName: saveHandle?.name ?? name,
+          types: [{ description: "ArcheIncognita backup", accept: { "application/json": [".json"] } }]
+        });
+      }
+      const writable = await saveHandle.createWritable();
+      await writable.write(contents);
+      await writable.close();
+      toast(`Saved to ${saveHandle.name}.`);
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      saveHandle = null;
+    }
+  }
+  if (quick) toast("This browser can’t overwrite files, so a new copy was downloaded.");
   const file = new Blob([contents], { type: "application/json" });
   const url = URL.createObjectURL(file);
   const download = element("a");
@@ -2335,7 +2391,15 @@ for (const view of ["minor", "tap"]) {
   });
 }
 
-$("#export-map").addEventListener("click", exportMap);
+$("#export-map").addEventListener("click", () => exportMap());
+window.archeSave = (quick) => exportMap({ quick });
+document.addEventListener("keydown", (event) => {
+  if (event.key.toLowerCase() !== "s" || !(event.metaKey || event.ctrlKey) || event.altKey) return;
+  // The Mac app handles ⌘S through its File menu.
+  if (window.webkit?.messageHandlers?.archeBackup) return;
+  event.preventDefault();
+  exportMap({ quick: !event.shiftKey });
+}, { capture: true });
 $("#import-map").addEventListener("click", async () => {
   const native = window.webkit?.messageHandlers?.archeBackup;
   if (!native) {
