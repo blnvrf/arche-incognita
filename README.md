@@ -24,14 +24,15 @@ The signed total in the upper-right of the map and the **Details** amounts cover
 
 ## Map and connections
 
-- Choose **New event** and select a source, including a completed event, to draw the first connection. Choose **No connection** to place the event on the outer ring. Connected events start near their origin on the next ring, using an open spot when space is tight. Drag an event to choose a different angle. Saved positions are kept. Drag the small **+** onto another event to draw an arrow, or click the **+** and then the target.
+- Choose **New event** and select a source, including a completed event, to draw the first connection. Choose **No connection** to place the event on the outer ring. Connected events start near their origin on the next ring, using an open spot when space is tight. Drag an event to choose a different angle. Saved positions are kept. Drag the small **+** onto another event to draw a connection, or click the **+** and then the target.
 - Use **−** at the top right of an event to collapse everything downstream. Use **+** in that same spot to expand it. Collapse state is saved with the map.
 - The eye beside the globe hides completed events and draws shortcuts through them. Ring positions adapt to the shorter paths. Toggle the eye again to show completed events and their original connections. The eye in an event’s details hides or shows only that event. Use **Details → Hidden events** to open a hidden event again.
-- Click a line on the map or choose **Edit dependencies** in an event’s drawer. Change its endpoints, reverse the arrow, add a label, adjust its curve, or delete it.
+- Click a line on the map or choose **Edit dependencies** in an event’s drawer. Change its endpoints, reverse its direction, add a label, or delete it. Connections are drawn as straight lines.
 - Edit an event’s title or description in its drawer. The Anchor’s details are editable. Its position and January 1, 1980 origin date are fixed. Click a faded completed task to open or restore it.
+- The branching icon at the bottom right switches to a left-to-right view: *arche* sits on the left and each event follows its furthest prerequisite in the next column, joined by right-angle lines. Cards stay in place in this view; drag the background to pan. Click the icon again to return to the orbit view. The app remembers the choice.
 - Drag the background to pan, scroll to zoom, and use **1:1** to center on *arche* instantly at 100%, type a zoom percentage directly, or use the globe to fit the whole map. Connected tasks use rings based on their distance from the Anchor. The outermost ring is always available for tasks with zero connections.
 
-On mobile, the top bar shows *AI* on the left, the current event in the middle, and the total on the right. Along the bottom, a row of small icons (menu, date range, zoom percentage, fit, completed-event toggle) sits above the graph picker, with the large **+** for a new event at the right. Tapping an event opens its details full screen. Pinch to zoom, or tap the zoom percentage to return to 100% centered on *arche*. The menu icon opens Save, Load, Details, Minor tasks, and TAP.
+On mobile, the top bar shows *AI* on the left, the current event in the middle, and the total on the right. Along the bottom, a row of small icons (menu, date range, zoom percentage, fit, completed-event toggle, left-to-right view) sits above the graph picker, with the large **+** for a new event at the right. Tapping an event opens its details full screen. Pinch to zoom, or tap the zoom percentage to return to 100% centered on *arche*. The menu icon opens Save, Load, Details, Minor tasks, and TAP.
 
 ## Focus and time
 
