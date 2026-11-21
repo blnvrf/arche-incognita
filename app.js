@@ -17,7 +17,10 @@ const newButton = $("#new-button");
 const newButtonLabel = $("#new-button-label");
 const gainsTotal = $("#gains-total");
 const connectionPreview = $("#connection-preview");
-const arrowMarkers = [$("#arrow"), $("#arrow-active")];
+const linearToggle = $("#toggle-linear");
+const LINEAR_KEY = "orbit.linear-view";
+const COLUMN_GAP = 250;
+const ROW_GAP = 84;
 const layer = $("#nodes");
 const lines = $("#graph-lines");
 const artwork = $("#map-artwork");
@@ -230,8 +233,9 @@ const readOnlyTree = () => !!dateRange;
 let graph = displayedGraph();
 let anchor = mapAnchor();
 let selectedEdge = null;
-let draftBend = null;
 let depth = 0;
+let linearView = localStorage.getItem(LINEAR_KEY) === "1";
+let ringGeometry = new Map();
 let selected = null;
 let drawerMode = null;
 let editing = null;
@@ -520,6 +524,68 @@ function layout() {
     }
   }
   depth = .39 / (radius + CARD_WIDTH / 2);
+  ringGeometry = geometry;
+  if (linearView) geometry = linearLayout(mapNodes, mapEdges, linked);
+}
+
+// Left-to-right layout: each event sits one column after its furthest prerequisite.
+function linearLayout(nodes, edges, linked) {
+  const ids = new Set([ROOT, ...nodes.map((node) => node.id)]);
+  const forward = [];
+  const outgoing = adjacency(edges, true);
+  const state = new Map();
+  const visit = (id) => {
+    state.set(id, 1);
+    for (const { to } of outgoing.get(id) ?? []) {
+      if (!ids.has(to)) continue;
+      if (state.get(to) === 1) continue; // back edge: ignore so cycles can't push columns forever
+      forward.push([id, to]);
+      if (!state.has(to)) visit(to);
+    }
+    state.set(id, 2);
+  };
+  visit(ROOT);
+  for (const node of nodes) if (linked.has(node.id) && !state.has(node.id)) visit(node.id);
+  const incoming = new Map();
+  for (const [from, to] of forward) {
+    if (!incoming.has(to)) incoming.set(to, []);
+    incoming.get(to).push(from);
+  }
+  const column = new Map([[ROOT, 0]]);
+  const columnOf = (id) => {
+    if (column.has(id)) return column.get(id);
+    column.set(id, 0);
+    const parents = incoming.get(id) ?? [];
+    const value = parents.length ? Math.max(...parents.map(columnOf)) + 1 : 1;
+    column.set(id, value);
+    return value;
+  };
+  const columns = [[anchor]];
+  let last = 0;
+  for (const node of nodes) {
+    if (!linked.has(node.id)) continue;
+    const index = columnOf(node.id);
+    last = Math.max(last, index);
+    (columns[index] ??= []).push(node);
+  }
+  const loose = nodes.filter((node) => !linked.has(node.id));
+  if (loose.length) columns[last + 1] = loose;
+  const rows = new Map([[ROOT, 0]]);
+  const placed = new Map();
+  columns.forEach((group = [], index) => {
+    const score = (node) => {
+      const parents = (incoming.get(node.id) ?? []).filter((id) => rows.has(id));
+      return parents.length ? parents.reduce((sum, id) => sum + rows.get(id), 0) / parents.length : Infinity;
+    };
+    const ordered = group.map((node, order) => ({ node, order, score: score(node) }))
+      .sort((a, b) => a.score - b.score || a.order - b.order);
+    ordered.forEach(({ node }, row) => {
+      const y = (row - (ordered.length - 1) / 2) * ROW_GAP;
+      rows.set(node.id, y);
+      placed.set(node.id, { x: index * COLUMN_GAP, y, radius: index, column: index });
+    });
+  });
+  return placed;
 }
 
 function collapsedDescendants(outgoing, nodes) {
@@ -668,7 +734,7 @@ function makeCard(node, blocker, hasBranch) {
   body.title = node.complete ? `${node.title} (completed)` : blocker ? `${node.title} · Locked by ${blocker.title}` : node.title;
   card.append(body);
   if (readOnlyTree()) return card;
-  if (node.id !== ROOT) body.addEventListener("pointerdown", (event) => startGesture(event, "move", node.id));
+  if (node.id !== ROOT && !linearView) body.addEventListener("pointerdown", (event) => startGesture(event, "move", node.id));
   const port = button("+", "port", () => {
     if (suppressClick) return;
     connectionSource = connectionSource === node.id ? null : node.id;
@@ -696,12 +762,17 @@ function makeCard(node, blocker, hasBranch) {
   return card;
 }
 
-function project({ x, y }) {
+function project(point) {
+  return linearView ? { x: point.x, y: point.y, w: 1 } : projectRing(point);
+}
+
+function projectRing({ x, y }) {
   const w = 1 - y * depth;
   return { x: x / w, y: y * TILT / w, w };
 }
 
 function unproject(x, y) {
+  if (linearView) return { x, y };
   const worldY = y / Math.max(.05, TILT + y * depth);
   return { x: x * (1 - worldY * depth), y: worldY };
 }
@@ -716,40 +787,40 @@ function rim(point, control, extra = 0) {
   return { x: point.x + dx * ratio, y: point.y + dy * ratio };
 }
 
-function edgeCurve(a, b, bend) {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const control = project({ x: (a.x + b.x) / 2 - dy * bend, y: (a.y + b.y) / 2 + dx * bend });
-  if (Math.hypot(dx, dy) < 1) return { path: "", midpoint: control };
-  const start = rim(project(a), control);
-  const end = rim(project(b), control, 6);
+function edgeCurve(a, b) {
+  const pa = project(a);
+  const pb = project(b);
+  if (Math.hypot(pb.x - pa.x, pb.y - pa.y) < 1) return { path: "", midpoint: pa };
+  if (linearView && pb.x - pa.x >= COLUMN_GAP / 2) {
+    // Elbow: out of the source's right side, turn in the gap before the target column.
+    const startX = pa.x + CARD_WIDTH / 2;
+    const endX = pb.x - CARD_WIDTH / 2;
+    const turn = endX - (COLUMN_GAP - CARD_WIDTH) / 2;
+    return {
+      path: `M ${startX} ${pa.y} H ${turn} V ${pb.y} H ${endX}`,
+      midpoint: { x: (turn + endX) / 2, y: pb.y }
+    };
+  }
+  const start = rim(pa, pb);
+  const end = rim(pb, pa, 2);
   return {
-    path: `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`,
-    midpoint: { x: (start.x + 2 * control.x + end.x) / 4, y: (start.y + 2 * control.y + end.y) / 4 }
+    path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+    midpoint: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }
   };
-}
-
-function defaultBend(edge, outgoing) {
-  const [from, to] = edge;
-  const reversed = outgoing
-    ? outgoing.get(to)?.some(({ to: target }) => target === from)
-    : graph.edges.some(([a, b]) => a === to && b === from);
-  if (reversed) return .28;
-  return from === ROOT ? 0 : .12;
 }
 
 function drawRing(radius, className, opacity = 1) {
   const points = Array.from({ length: 80 }, (_, index) => {
     const angle = index * TAU / 80;
-    const p = project({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) });
+    const p = projectRing({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) });
     return `${p.x},${p.y}`;
   }).join(" ");
   return svg("polygon", { class: className, points, opacity });
 }
 
 function drawBackground() {
-  const origin = project(geometry.get(ROOT));
-  const lastOccupied = Math.max(...visible.map((node) => geometry.get(node.id).radius));
+  const origin = projectRing(ringGeometry.get(ROOT));
+  const lastOccupied = Math.max(...visible.map((node) => ringGeometry.get(node.id).radius));
   const radius = ringRadii.find((ring) => ring > lastOccupied) ?? ringRadii.at(-1) + FOG_GAP;
   // Perspective shifts the ellipse's center toward the foreground. Keep its light source on the Anchor.
   const perspective = radius * depth;
@@ -772,8 +843,8 @@ function radialGuides(radius) {
   return [180, 90, 135, 45].map((degrees) => {
     const angle = degrees * Math.PI / 180;
     const point = { x: radius * Math.cos(angle), y: -radius * Math.sin(angle) };
-    const start = project(point);
-    const end = project({ x: -point.x, y: -point.y });
+    const start = projectRing(point);
+    const end = projectRing({ x: -point.x, y: -point.y });
     return svg("line", {
       class: "radial-guide", opacity: .35,
       x1: start.x, y1: start.y, x2: end.x, y2: end.y
@@ -785,8 +856,7 @@ function updateEdge(edge) {
   const entry = edgeViews.get(edge);
   if (!entry) return;
   const [from, to] = edge;
-  const bend = edge === selectedEdge && draftBend != null ? draftBend : entry.bend;
-  const curve = edgeCurve(geometry.get(from), geometry.get(to), bend);
+  const curve = edgeCurve(geometry.get(from), geometry.get(to));
   entry.path.setAttribute("d", curve.path);
   entry.hit?.setAttribute("d", curve.path);
   if (entry.label) {
@@ -805,13 +875,13 @@ function positionCard(id) {
 
 function buildScene(outgoing) {
   const outer = ringRadii.at(-1);
-  const occupied = new Set(visible.map((node) => geometry.get(node.id).radius));
+  const occupied = new Set(visible.map((node) => ringGeometry.get(node.id).radius));
   const fogRadii = EMPTY_RING_OPACITY.map((_, index) => outer + (index + 1) * FOG_GAP);
   drawBackground();
   const strokes = [];
   let lastDrawnRadius = 0;
   let emptyRun = 0;
-  for (const radius of [...ringRadii, ...fogRadii]) {
+  for (const radius of linearView ? [] : [...ringRadii, ...fogRadii]) {
     const hasNodes = occupied.has(radius);
     const unconnected = radius === outer;
     if (hasNodes) emptyRun = 0;
@@ -821,7 +891,7 @@ function buildScene(outgoing) {
     strokes.push(drawRing(radius, className, opacity));
     lastDrawnRadius = radius;
   }
-  compass.replaceChildren(...radialGuides(lastDrawnRadius));
+  compass.replaceChildren(...(linearView ? [] : radialGuides(lastDrawnRadius)));
 
   edgeViews.clear();
   incidentViews.clear();
@@ -830,11 +900,9 @@ function buildScene(outgoing) {
   for (const edge of visibleEdges) {
     const [from, to, options] = edge;
     const active = highlighted.has(edge) || edge === selectedEdge;
-    const bend = options?.bend ?? defaultBend(edge, outgoing);
     const shortcut = mapTopology.shortcuts.has(edge);
     const path = svg("path", {
-      class: `edge${shortcut ? " shortcut" : ""}${active ? " active" : ""}${completed.has(from) || completed.has(to) ? " completed" : ""}`,
-      "marker-end": active ? "url(#arrow-active)" : "url(#arrow)"
+      class: `edge${shortcut ? " shortcut" : ""}${active ? " active" : ""}${completed.has(from) || completed.has(to) ? " completed" : ""}`
     });
     strokes.push(path);
     let hit;
@@ -857,7 +925,7 @@ function buildScene(outgoing) {
       label.textContent = options.label;
       strokes.push(label);
     }
-    edgeViews.set(edge, { path, hit, label, bend });
+    edgeViews.set(edge, { path, hit, label });
     for (const id of [from, to]) {
       if (!incidentViews.has(id)) incidentViews.set(id, []);
       incidentViews.get(id).push(edge);
@@ -904,10 +972,6 @@ function draw() {
   scene.style.setProperty("--edge-label-size", `${10 / camera.zoom}px`);
   scene.style.setProperty("--edge-label-offset", `${-7 / camera.zoom}px`);
   scene.style.setProperty("--edge-label-outline", `${4 / camera.zoom}px`);
-  for (const marker of arrowMarkers) {
-    marker.setAttribute("markerWidth", 7 / camera.zoom);
-    marker.setAttribute("markerHeight", 7 / camera.zoom);
-  }
 }
 
 function scheduleCameraDraw() {
@@ -944,6 +1008,15 @@ function updateConnectionPreview() {
 }
 
 function fitCamera() {
+  if (linearView) {
+    const points = visible.map((node) => geometry.get(node.id));
+    const minX = Math.min(...points.map((p) => p.x)) - CARD_WIDTH / 2 - 24;
+    const maxX = Math.max(...points.map((p) => p.x)) + CARD_WIDTH / 2 + 24;
+    const minY = Math.min(...points.map((p) => p.y)) - CARD_HEIGHT / 2 - 24;
+    const maxY = Math.max(...points.map((p) => p.y)) + CARD_HEIGHT / 2 + 24;
+    const zoom = Math.min(1.2, viewport.clientWidth / (maxX - minX), viewport.clientHeight / (maxY - minY));
+    return { x: -(minX + maxX) / 2, y: -(minY + maxY) / 2, zoom: Math.max(.04, zoom) };
+  }
   const radius = ringRadii.at(-1);
   const minY = project({ x: 0, y: -radius }).y - CARD_HEIGHT / 2;
   const maxY = project({ x: 0, y: radius }).y + CARD_HEIGHT / 2;
@@ -1216,7 +1289,6 @@ function chooseEdge(edge) {
 }
 
 function renderEdgeDrawer(edge) {
-  draftBend = null;
   const [from, to, options] = edge;
   drawer.append(drawerHeading("", "Edit dependencies"));
   const source = element("select");
@@ -1232,28 +1304,8 @@ function renderEdgeDrawer(edge) {
   label.value = options?.label ?? "";
   label.maxLength = 48;
   label.placeholder = "Optional";
-  const curve = element("input");
-  curve.type = "range";
-  curve.min = "-0.85";
-  curve.max = "0.85";
-  curve.step = "0.01";
-  const initialBend = options?.bend ?? defaultBend(edge);
-  curve.value = initialBend;
-  const value = element("output", "range-value", Number(curve.value).toFixed(2));
-  curve.addEventListener("input", () => {
-    const bend = Number(curve.value);
-    value.textContent = bend.toFixed(2);
-    if (source.value === from && target.value === to) {
-      draftBend = bend;
-      updateEdge(edge);
-    }
-  });
-  const reverse = button("Reverse arrow", "button quiet", () => {
+  const reverse = button("Reverse direction", "button quiet", () => {
     [source.value, target.value] = [target.value, source.value];
-    curve.value = -Number(curve.value);
-    draftBend = null;
-    updateEdge(edge);
-    value.textContent = Number(curve.value).toFixed(2);
   });
   const apply = button("Save dependency", "button primary", () => {
     if (source.value === target.value) {
@@ -1264,9 +1316,7 @@ function renderEdgeDrawer(edge) {
       toast("That connection already exists.");
       return;
     }
-    const bend = Number(curve.value);
     const metadata = { label: label.value.trim() };
-    if (options?.bend !== undefined || bend !== initialBend) metadata.bend = bend;
     edge.splice(0, edge.length, source.value, target.value, metadata);
     changed();
     refresh();
@@ -1275,11 +1325,9 @@ function renderEdgeDrawer(edge) {
   const remove = button("Delete dependency", "button quiet danger", () => removeEdge(edge));
   const actions = element("div", "drawer-actions");
   actions.append(apply, reverse, remove);
-  const curveField = labelField("Curve", curve);
-  curveField.append(value);
   drawer.append(
     labelField("From", source), labelField("To", target),
-    labelField("Label", label), curveField, actions
+    labelField("Label", label), actions
   );
 }
 
@@ -1949,7 +1997,6 @@ function resetMapView() {
   anchor = mapAnchor();
   selected = null;
   selectedEdge = null;
-  draftBend = null;
   drawerMode = null;
   connectionSource = null;
   gesture = null;
@@ -2355,7 +2402,7 @@ function updateView() {
   newButton.hidden = tree && readOnlyTree();
   $("#details-button").hidden = !tree && !mobileLayout.matches;
   mobileZoom.hidden = !tree;
-  $("#fit").hidden = completedToggle.hidden = !tree;
+  $("#fit").hidden = completedToggle.hidden = linearToggle.hidden = !tree;
   $("#map-controls").hidden = !tree;
   $("#gains-summary").hidden = !tree;
   $("#date-filter").hidden = !tree;
@@ -2447,7 +2494,7 @@ function openBackup(contents) {
 
 function startGesture(event, mode, id) {
   if (event.button !== 0 || !event.isPrimary || gesture || pinch) return;
-  if (mode === "move" && connectionSource) return;
+  if (mode === "move" && (connectionSource || linearView)) return;
   gesture = { mode, id, pointer: event.pointerId, startX: event.clientX, startY: event.clientY };
 }
 
@@ -2668,6 +2715,22 @@ completedToggle.addEventListener("click", () => {
   if (!readOnlyTree()) save();
   refresh();
 });
+function syncLinearToggle() {
+  const label = linearView ? "Show orbit view" : "Show left-to-right view";
+  linearToggle.setAttribute("aria-pressed", linearView);
+  linearToggle.setAttribute("aria-label", label);
+  linearToggle.title = label;
+  $("#map").classList.toggle("linear", linearView);
+}
+syncLinearToggle();
+linearToggle.addEventListener("click", () => {
+  linearView = !linearView;
+  localStorage.setItem(LINEAR_KEY, linearView ? "1" : "0");
+  syncLinearToggle();
+  fitted = true;
+  following = null;
+  refresh();
+});
 $("#fit").addEventListener("click", () => {
   fitted = true;
   following = null;
@@ -2720,7 +2783,7 @@ function updateResponsiveControls() {
     $("#map").append(links);
   }
   const zoomActions = mobile ? $("#mobile-quick-controls") : $("#desktop-zoom");
-  zoomActions.append($("#fit"), completedToggle);
+  zoomActions.append($("#fit"), completedToggle, linearToggle);
   $("#details-button").hidden = !mobile && workspace.view !== "tree";
 }
 

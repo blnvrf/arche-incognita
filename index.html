@@ -46,8 +46,6 @@
             <clipPath id="card-outline" clipPathUnits="objectBoundingBox">
               <path d="M .049 0 H .951 Q .983 0 .984 .09 L .998 .91 Q 1 1 .966 1 H .034 Q 0 1 .002 .91 L .016 .09 Q .017 0 .049 0 Z"/>
             </clipPath>
-            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M1 1 9 5 1 9" fill="none" class="arrow-head" stroke-width="1.15"/></marker>
-            <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M1 1 9 5 1 9" fill="none" class="arrow-head active" stroke-width="1.15"/></marker>
           </defs>
           <g aria-hidden="true">
             <image id="map-artwork" href="map-artwork.webp" preserveAspectRatio="none"/>
@@ -55,7 +53,7 @@
           </g>
           <g id="radial-guides" aria-hidden="true"></g>
           <g id="graph-lines"></g>
-          <path id="connection-preview" class="edge preview" marker-end="url(#arrow-active)" aria-hidden="true"/>
+          <path id="connection-preview" class="edge preview" aria-hidden="true"/>
           </svg>
           <div id="nodes" class="nodes"></div>
         </div>
@@ -109,6 +107,14 @@
               <path class="visibility-slash" d="m4 4 16 16"/>
             </svg>
           </button>
+          <button id="toggle-linear" aria-label="Show left-to-right view" title="Show left-to-right view" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="2" y="10" width="5" height="4" rx="1"/>
+              <rect x="17" y="4" width="5" height="4" rx="1"/>
+              <rect x="17" y="16" width="5" height="4" rx="1"/>
+              <path d="M7 12h5M12 6v12M12 6h5M12 18h5"/>
+            </svg>
+          </button>
         </div>
       </div>
     </section>
@@ -138,7 +144,7 @@
       </div>
       <div id="connection-fields">
         <label>Connect from<select name="source"></select></label>
-        <p class="field-help">Choose a source to draw an arrow, or select No connection to start on the outer ring.</p>
+        <p class="field-help">Choose a source to draw a connection, or select No connection to start on the outer ring.</p>
       </div>
       <div class="dialog-actions"><button type="button" class="button quiet" id="cancel-button">Cancel</button><button type="submit" class="button primary" id="submit-button">Add event</button></div>
     </form>
