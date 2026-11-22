@@ -796,8 +796,15 @@ function edgeCurve(a, b) {
     const startX = pa.x + CARD_WIDTH / 2;
     const endX = pb.x - CARD_WIDTH / 2;
     const turn = endX - (COLUMN_GAP - CARD_WIDTH) / 2;
+    const rise = pb.y - pa.y;
+    const r = Math.min(12, Math.abs(rise) / 2, turn - startX, endX - turn);
+    const dir = Math.sign(rise);
+    const path = r < 1
+      ? `M ${startX} ${pa.y} H ${turn} V ${pb.y} H ${endX}`
+      : `M ${startX} ${pa.y} H ${turn - r} Q ${turn} ${pa.y} ${turn} ${pa.y + dir * r}` +
+        ` V ${pb.y - dir * r} Q ${turn} ${pb.y} ${turn + r} ${pb.y} H ${endX}`;
     return {
-      path: `M ${startX} ${pa.y} H ${turn} V ${pb.y} H ${endX}`,
+      path,
       midpoint: { x: (turn + endX) / 2, y: pb.y }
     };
   }
