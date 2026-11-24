@@ -8,11 +8,13 @@ You can also open `index.html` in a browser. Instrument Serif loads from Google 
 
 The graph picker lists independent graphs. Under **Actions**, choose **Rename current**, **New from scratch**, **Duplicate current**, or **Delete current**. Deleting asks for confirmation and is unavailable when only one graph is left. A duplicate copies events, connections, dates, and values into a separate graph.
 
-- **Minor tasks** opens a board of flat cards. Choose **Add task** and use the checkmark to complete or reopen a task.
-- **TAP** opens a board of triggers or goals. Choose **Add TAP** and click a card title to reveal its instructions.
+Switch between **Tree view**, **Minor tasks**, and **TAP** with the links at the bottom left.
+
+- **Minor tasks** opens a board of cards over the Colossus of Rhodes engraving. Choose **Add task** and use the checkmark to complete or reopen a task.
+- **TAP** opens a board of triggers or goals over a moonscape. Choose **Add TAP** and click a card title to reveal its instructions.
 - Use the handle in either board to drag a card. With the handle focused, arrow keys move it too.
 
-The Alexander Mosaic remains the workspace background. A running timer keeps tracking when you switch views. Starting another timer pauses the previous one.
+The Alexander Mosaic remains the tree view background. A running timer keeps tracking when you switch views. Starting another timer pauses the previous one.
 
 ## Date range
 
