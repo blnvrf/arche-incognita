@@ -253,20 +253,21 @@ input[type="range"] { accent-color: var(--accent); padding: 0; }
 
 .map:not([data-view="tree"]) .viewport { cursor: default; touch-action: auto; }
 .map:not([data-view="tree"]) :is(.nodes, #radial-guides, #graph-lines, #connection-preview, #map-artwork, #glow-ellipse) { display: none; }
-.map[data-view="minor"] .viewport {
-  background: linear-gradient(rgb(0 0 0 / .62), rgb(0 0 0 / .62)), url("minor-artwork.webp") center / cover no-repeat #000;
+.map:is([data-view="minor"], [data-view="tap"]) .viewport {
+  /* The tree view's gold tint (its glow center color) without the vignette */
+  --board-tint: color-mix(in srgb, color-mix(in srgb, var(--map-color) 19%, #030303) 70%, transparent);
+  background: linear-gradient(var(--board-tint), var(--board-tint)), var(--board-art) var(--board-art-position, center) / cover no-repeat #000;
 }
-.map[data-view="tap"] .viewport {
-  background: linear-gradient(rgb(0 0 0 / .4), rgb(0 0 0 / .4)), url("tap-artwork.webp") center / cover no-repeat #000;
-}
+.map[data-view="minor"] .viewport { --board-art: url("minor-artwork.webp"); --board-art-position: center top; }
+.map[data-view="tap"] .viewport { --board-art: url("tap-artwork.webp"); }
 .collection {
   position: absolute;
   inset: 61px 0 60px;
   overflow: auto;
-  padding: 6px 0 24px;
+  padding: 6px 16px 24px;
   overscroll-behavior: contain;
 }
-.collection-empty { margin: 12px 16px; color: var(--secondary-text); font-size: 13px; }
+.collection-empty { margin: 12px 0; color: var(--secondary-text); font-size: 13px; }
 .collection-grid {
   display: grid;
   --board-card-width: min(100%, 245px);
