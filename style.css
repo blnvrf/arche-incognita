@@ -252,15 +252,21 @@ input[type="range"] { accent-color: var(--accent); padding: 0; }
 .drawer .locked-message { color: var(--secondary-text); font-size: 12px; }
 
 .map:not([data-view="tree"]) .viewport { cursor: default; touch-action: auto; }
-.map:not([data-view="tree"]) :is(.nodes, #radial-guides, #graph-lines, #connection-preview) { display: none; }
+.map:not([data-view="tree"]) :is(.nodes, #radial-guides, #graph-lines, #connection-preview, #map-artwork, #glow-ellipse) { display: none; }
+.map[data-view="minor"] .viewport {
+  background: linear-gradient(rgb(0 0 0 / .62), rgb(0 0 0 / .62)), url("minor-artwork.webp") center / cover no-repeat #000;
+}
+.map[data-view="tap"] .viewport {
+  background: linear-gradient(rgb(0 0 0 / .4), rgb(0 0 0 / .4)), url("tap-artwork.webp") center / cover no-repeat #000;
+}
 .collection {
   position: absolute;
   inset: 61px 0 60px;
   overflow: auto;
-  padding: 6px clamp(16px, 5vw, 72px) 24px;
+  padding: 6px 0 24px;
   overscroll-behavior: contain;
 }
-.collection-empty { margin: 12px 0; color: var(--secondary-text); font-size: 13px; }
+.collection-empty { margin: 12px 16px; color: var(--secondary-text); font-size: 13px; }
 .collection-grid {
   display: grid;
   --board-card-width: min(100%, 245px);
@@ -268,18 +274,25 @@ input[type="range"] { accent-color: var(--accent); padding: 0; }
   grid-template-columns: repeat(auto-fill, minmax(0, var(--board-card-width)));
   align-items: start;
   gap: 16px;
-  max-width: 1080px;
-  margin-inline: auto;
 }
 .collection-card {
+  --card-border: var(--map-border);
+  --card-fill: color-mix(in srgb, var(--map-surface) 94%, transparent);
+  --card-inset: 3px;
   position: relative;
+  isolation: isolate;
   min-width: 0;
-  border: 1px solid var(--map-border);
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--map-surface) 93%, transparent);
   overflow-wrap: anywhere;
 }
-[data-view="minor"] .collection-card { padding: 12px; }
+.collection-card::before, .collection-card::after {
+  content: ""; position: absolute; z-index: -1; clip-path: url(#card-outline); pointer-events: none;
+}
+.collection-card::before { inset: 0; background: var(--card-border); }
+.collection-card::after { inset: var(--card-inset); background: var(--card-fill); }
+.collection-card:hover, .collection-card:focus-within, .collection-card.dragging {
+  --card-border: var(--accent); --card-fill: color-mix(in srgb, var(--map-color) 18%, var(--deep));
+}
+[data-view="minor"] .collection-card { padding: 14px 16px; }
 @media (min-width: 560px) {
   [data-view="minor"] .collection-card:not(.positioned):nth-child(3n + 2) { margin-top: 15px; }
   [data-view="minor"] .collection-card:not(.positioned):nth-child(3n + 3) { margin-top: 7px; }
@@ -291,10 +304,10 @@ input[type="range"] { accent-color: var(--accent); padding: 0; }
 .collection-card .success[aria-pressed="true"] { background: #2a5137; border-color: #548b64; }
 .collection-actions { display: flex; gap: 6px; margin-top: 10px; }
 .collection-card .icon-button { flex: none; width: 30px; min-height: 30px; }
-.collection-card summary { padding: 13px 42px 13px 14px; color: var(--accent); font-size: 15px; font-weight: 650; cursor: pointer; }
-.collection-card summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 9px; }
-.collection-card details > :not(summary) { margin-inline: 14px; }
-.collection-card details .collection-actions { margin-bottom: 12px; }
+.collection-card summary { padding: 15px 42px 15px 16px; color: var(--accent); font-size: 15px; font-weight: 650; cursor: pointer; }
+.collection-card summary:focus-visible { outline: none; }
+.collection-card details > :not(summary) { margin-inline: 16px; }
+.collection-card details .collection-actions { margin-bottom: 14px; }
 
 
 .gains-summary { min-width: 0; white-space: nowrap; display: flex; align-items: center; gap: 10px; font: 17px/1.2 var(--serif); color: var(--accent); pointer-events: auto; }
@@ -350,13 +363,14 @@ input[type="range"] { accent-color: var(--accent); padding: 0; }
   .pill-bubbles i { opacity: .4; bottom: var(--s); }
 }
 .workspace-links { position: absolute; z-index: 1; bottom: 16px; left: 16px; display: flex; gap: 4px; align-items: center; }
-.workspace-links button { padding: 7px 5px; background: none; border: 0; border-radius: 4px; color: var(--secondary-text); font-size: 12px; }
-.workspace-links button:hover:not(:disabled), .workspace-links button[aria-pressed="true"] { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.workspace-links { gap: 10px; }
+.workspace-links button { padding: 7px 5px; background: none; border: 0; border-radius: 4px; color: var(--accent); font-size: 12px; text-decoration: none; opacity: .5; transition: opacity .15s, color .15s; }
+.workspace-links button:hover:not(:disabled), .workspace-links button:focus, .workspace-links button[aria-pressed="true"] { color: var(--accent); text-decoration: none; opacity: 1; }
 .collection-card.positioned { position: absolute; z-index: 1; width: var(--board-card-width); left: var(--card-x); top: var(--card-y); transform: translateX(calc(0% - var(--card-x))); }
 .collection-card:focus-within { z-index: 2; }
 .collection-card.dragging { z-index: 3; }
 .collection-drag {
-  position: absolute; top: 8px; right: 8px; padding: 2px 5px;
+  position: absolute; top: 10px; right: 12px; padding: 2px 5px;
   border: 0; border-radius: 4px; background: transparent; color: var(--muted);
   font-size: 18px; line-height: 1; cursor: grab; touch-action: none; user-select: none;
 }

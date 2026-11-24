@@ -2416,6 +2416,7 @@ function updateView() {
   $("#date-filter").classList.toggle("active", !!dateRange);
   $("#date-filter-label").textContent = dateRange
     ? dateLabel.formatRange(dateRange.start, localDate(dateRange.to)) : "All dates";
+  $("#tree-view").setAttribute("aria-pressed", tree);
   $("#minor-view").setAttribute("aria-pressed", view === "minor");
   $("#tap-view").setAttribute("aria-pressed", view === "tap");
   collection.hidden = tree;
@@ -2437,9 +2438,10 @@ mapPicker.addEventListener("change", () => {
   resetMapView();
   save();
 });
-for (const view of ["minor", "tap"]) {
+for (const view of ["tree", "minor", "tap"]) {
   $(`#${view}-view`).addEventListener("click", () => {
-    workspace.view = workspace.view === view ? "tree" : view;
+    if (workspace.view === view) return;
+    workspace.view = view;
     resetMapView();
     save();
   });
